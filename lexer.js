@@ -70,6 +70,7 @@ export default class Lexer {
       const keywords = new Set([
         "let",
         "if",
+        "elif",
         "else",
         "resolve",
         "possible",
@@ -134,11 +135,13 @@ export default class Lexer {
         case '(':
         case ')':
         case '{':
-        case '}':
-        case ';':
         case ',':
           this.tokens.push({ type: "PUNCTUATION_TOKEN", value: ch });
           break;
+        case '}':
+        case ';':
+            this.tokens.push({ type: "EXP", value: ch });
+            break;
         default:
           throw new Error("Unexpected character: " + ch);
       }
@@ -146,21 +149,3 @@ export default class Lexer {
   }
   
 
-/*
-let variable = "C6H6";
-variable = "C6H6" + " + extra";
-if (possible("C6H6" + variable)) {
-  let reaction = resolve("C6H6" + variable);
-  if (getOxidixngs(reaction)) {
-    let oxidizers = getReducings(reaction);
-    if (getMolecWeight(oxidizers) > 50) {
-      let volume = getVolume(oxidizers);
-      if (getV(volume, getMolecWeight(reaction)) < 100) {
-        show("Reaction is stable with low volume");
-      }
-    }
-  }
-} else {
-  show("Reaction is not possible");
-}
-*/
