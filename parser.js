@@ -5,7 +5,10 @@ export default class Parser{
         this.position = 0;
         this.end = this.tokens.length;
         this.root = this.node;
+        this.leftRoot = this.node.left;
         this.set = new Set(["elif", "else", "if"]);
+        this.isGood = true;
+        this.identifiers = new Set();
     }
 
     isAtEnd(){
@@ -16,9 +19,27 @@ export default class Parser{
         return this.tokens[this.position];
     }
 
-    findEXP(start, endCh = ";"){
+    findEXP(start){
         for(let i = start; i < this.tokens.length; i++){
-            if(this.tokens[i].value === endCh){
+            if(this.tokens[i].value === ";"){
+                return i;
+            }
+        }
+        return this.tokens.length;
+    }
+
+    findEXPcur(start){
+        let count = 0, endedCondition = false;
+        for(let i = start; i < this.tokens.length; i++){
+            if(this.tokens[i].value === "{"){
+                count++;
+            } else if(this.tokens[i].value === "}"){
+                count--;
+            } else if(this.tokens[i].value === ")"){
+                endedCondition = true;
+                continue;
+            } 
+            if(endedCondition && count === 0){
                 return i;
             }
         }
@@ -35,31 +56,94 @@ export default class Parser{
                 return start;
             }
         }
+    }
+
+    conditionalHandler(start, end, key){
 
     }
 
+    initHandler(start, end, key){
+        if(key === start){
+            this.leftRoot.value = this.tokens[key]?.value; 
+            this.leftRoot.type = this.tokens[key]?.type;
+            if(this.tokens[key+1].type === "IDENTIFIER_TOKEN"){
+                this.identifiers.add(this.tokens[key+1].value);
+                this.leftRoot.left = {left: null, right: null, value: this.tokens[start+1].value, type: this.tokens[start+1].type};
+            } 
+            if(end-start === 4){ 
+                this.leftRoot.right = {left: null, right: null, value: this.tokens[end-1].value, type: this.tokens[end-1].type};
+            } 
+        } else {
+            this.isGood = false;
+            alert("Near key: " + key + " Key type: " + this.tokens[key].type + " Key value: " + this.tokens[key].value + " Syntax Error: Expected an initialization");
+        }
+    }
+
+    assignHandler(start, end, key){
+        if(this.identifiers.has(this.tokens[key].value)){
+            if(key === start && end-start>2 && this.tokens[key+1].value === "="){
+                this.leftRoot.value = this.tokens[key]?.value; 
+                this.leftRoot.type = this.tokens[key]?.type;
+                this.leftRoot.left = {left: null, right: null, value: this.tokens[key+2].value, type: this.tokens[key+2].type};
+            } else {
+                this.isGood = false;
+                alert("Near key: " + key + " Key type: " + this.tokens[key].type + " Key value: " + this.tokens[key].value + " Syntax Error: Expected an assigment");
+            }
+        } else{
+            alert("Near key: " + key + " Key type: " + this.tokens[key].type + " Key value: " + this.tokens[key].value + " This variable isn't delcared!");
+        }
+    }
+
+    generalHandler(start, end, key){
+
+    }
+
+    expressionHandler(start, end, key) {
+        if(this.tokens[key].type === "IDENTIFIER_TOKEN"){
+            this.assignHandler(start, end, key);
+        } else if (["resolve", "possible", "getOxidixngs", "getReducings", "show", 
+            "getMolecWeight", "getVolume", "getV", "isAcid", "isBase"].includes(this.tokens[key].value)){
+           this.generalHandler(start, end, key);
+           return;
+       } else {
+            switch (this.tokens[key].value) {
+                case "let":
+                    this.initHandler(start, end, key);
+                    break;
+                case "if":
+                case "elif":
+                case "else":
+                    this.conditionalHandler(start, end, key);
+                    break;
+                case "else":
+                    break;
+                default:
+                    throw new Error(`Unknown keyword: ${this.tokens[key].value}`);
+            }
+        }
+    }
+    
+    
+
     parse(){ 
-        let key = this.findKeyword(this.position, this.tokens.length) || this.position;
         let start = this.position;
+        let key = this.findKeyword(this.position, this.findEXP(start)) || this.position;
         let end;
         if(this.set.has(this.tokens[key].value)){ 
-           end  = this.findEXP(start, "}");
+            end  = this.findEXPcur(start);
         } else{
             end = this.findEXP(start);
         }
-        this.root.value = this.tokens[end].value;
-        this.root.type = this.tokens[end].type;
+        this.root.value = this.tokens[end]?.value;
+        this.root.type = this.tokens[end]?.type;
 
 
-        //Some parse logic for left
+        this.root.left = {left: null, right: null, value: null, type: null};
+        this.leftRoot = this.root.left;
+        this.expressionHandler(start, end, key);
 
         this.position = end+1;
-        console.log(this.position);
-        console.log(this.tokens.length);
-        console.log(this.findEXP(this.position));
-        
         if(this.findEXP(this.position) < this.tokens.length || this.findEXP(this.position, '}') < this.tokens.length){ 
-            console.log("Worked");
             this.root.right = {left: null, right: null, value: null, type: null};
             this.root = this.root.right;
             this.parse();
@@ -72,6 +156,9 @@ export default class Parser{
 
     getTree(){
         this.parse();
-        return this.node;
+        if(this.isGood){
+            return this.node;
+        }
+        return "Syntax Error";
     }
 }
