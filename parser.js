@@ -51,6 +51,9 @@ export default class Parser{
     }
 
     findKeyword(start, end){
+        if(this.tokens[start].type === "IDENTIFIER_TOKEN" && this.tokens[start+1].value === "=" ){
+            return start;
+        }
         for(start; start < end; start++){
             if(this.tokens[start].type === "KEYWORD_TOKEN"){
                 return start;
@@ -72,7 +75,11 @@ export default class Parser{
             } 
             if(end-start === 4){ 
                 this.leftRoot.right = {left: null, right: null, value: this.tokens[end-1].value, type: this.tokens[end-1].type};
-            } 
+            } else if(this.tokens[start+3].type==="KEYWORD_TOKEN"){
+                this.leftRoot.left = {left: null, right: null, value: this.tokens[key+3].value, type: this.tokens[key+3].type};
+                this.leftRoot = this.leftRoot.left;
+                this.generalHandler(start+3, end, key+3);
+            }
         } else {
             this.isGood = false;
             alert("Near key: " + key + " Key type: " + this.tokens[key].type + " Key value: " + this.tokens[key].value + " Syntax Error: Expected an initialization");
@@ -81,10 +88,16 @@ export default class Parser{
 
     assignHandler(start, end, key){
         if(this.identifiers.has(this.tokens[key].value)){
-            if(key === start && end-start>2 && this.tokens[key+1].value === "="){
+            if(key === start && end-start>2 && this.tokens[key+1].value === "="){ 
                 this.leftRoot.value = this.tokens[key]?.value; 
                 this.leftRoot.type = this.tokens[key]?.type;
-                this.leftRoot.left = {left: null, right: null, value: this.tokens[key+2].value, type: this.tokens[key+2].type};
+                if (this.tokens[key+2].type === "KEYWORD_TOKEN"){
+                    this.leftRoot.left = {left: null, right: null, value: this.tokens[key+2].value, type: this.tokens[key+2].type};
+                    this.leftRoot = this.leftRoot.left;
+                    this.generalHandler(start+2, end, key+2);
+                } else{
+                    this.leftRoot.left = {left: null, right: null, value: this.tokens[key+2].value, type: this.tokens[key+2].type};
+                }
             } else {
                 this.isGood = false;
                 alert("Near key: " + key + " Key type: " + this.tokens[key].type + " Key value: " + this.tokens[key].value + " Syntax Error: Expected an assigment");
@@ -94,8 +107,34 @@ export default class Parser{
         }
     }
 
-    generalHandler(start, end, key){
+    parsePlus(start, end, key){  
+        this.leftRoot.value = this.tokens[start+1].value;
+        this.leftRoot.type = this.tokens[start+1].type;
+        if(this.tokens[start+3]?.value===")" || start+3>end){ 
+            this.leftRoot.left = {left: null, right: null, value: this.tokens[start].value, type: this.tokens[start].type};
+            this.leftRoot.right = {left: null, right: null, value: this.tokens[start+2].value, type: this.tokens[start+2].type};
+        } else{ 
+            this.leftRoot.left = {left: null, right: null, value: this.tokens[start].value, type: this.tokens[start].type};
+            this.leftRoot.right = {left: null, right: null, value: null, type: null};
+            this.leftRoot = this.leftRoot.right;
+            this.parsePlus(start+2, end, key);
+        }
+    }
 
+    generalHandler(start, end, key){ 
+        if(start===key && this.tokens[key+1].value === "("){
+            start = key+2; 
+            this.leftRoot.value = this.tokens[key]?.value;
+            this.leftRoot.type = this.tokens[key]?.type;
+            this.leftRoot.left = {left: null, right: null, value: null, type: null};
+            this.leftRoot = this.leftRoot.left;
+            if(this.tokens[start+1].value === ")"){
+                this.leftRoot.value = this.tokens[start].value;
+                this.leftRoot.type = this.tokens[start].type;
+            } else {
+                this.parsePlus(start, end, key);
+            }
+        }
     }
 
     expressionHandler(start, end, key) {
