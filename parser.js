@@ -214,12 +214,25 @@ export default class Parser{
             if(this.tokens[subend+1].value === "{" && this.tokens[end].value === "}"){ 
                 this.parse(subend+2, this.rightRoot, end);
             } else{
-                alert("Error: You didn't open/close if body with '{'/'{'.");
+                alert("Error: You didn't open/close if body with '{'/'}'.");
             }
         } else{
             console.log(this.tokens[start].value + " " + this.tokens[start+2].value);
             alert("Error: Incorrect expression nearly if/elif statement");
         }
+    }
+
+    elseHandler(start, end, key){
+        this.leftRoot.value = this.tokens[key]?.value;
+        this.leftRoot.type = this.tokens[key]?.type;
+        this.leftRoot.right = {left: null, right: null, value: null, type: null};
+        this.rightRoot = this.leftRoot.right
+        if(this.tokens[start+1].value === "{" && this.tokens[end].value === "}"){ 
+            this.parse(start+2, this.rightRoot, end);
+        } else{
+            alert("Error: You didn't open/close if body with '{'/'}'.");
+        }
+
     }
 
     expressionHandler(start, end, key) {
@@ -239,6 +252,7 @@ export default class Parser{
                     this.conditionalHandler(start, end, key);
                     break;
                 case "else":
+                    this.elseHandler(start, end, key);
                     break;
                 default:
                     throw new Error(`Unknown keyword: ${this.tokens[key].value}`);
