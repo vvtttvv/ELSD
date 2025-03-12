@@ -6,6 +6,7 @@ export default class Parser{
         this.end = this.tokens.length;
         this.root = this.node;
         this.leftRoot = this.node.left;
+        this.rightRoot = this.node.right;
         this.set = new Set(["elif", "else", "if"]);
         this.isGood = true;
         this.identifiers = new Set();
@@ -29,17 +30,19 @@ export default class Parser{
     }
 
     findEXPcur(start){
-        let count = 0, endedCondition = false;
+        let count = 0, endedCondition;
         for(let i = start; i < this.tokens.length; i++){
+            if(this.tokens[i].value === "{"){
+                endedCondition=i;
+            }
+        }
+        for(let i = endedCondition; i < this.tokens.length; i++){
             if(this.tokens[i].value === "{"){
                 count++;
             } else if(this.tokens[i].value === "}"){
                 count--;
-            } else if(this.tokens[i].value === ")"){
-                endedCondition = true;
-                continue;
             } 
-            if(endedCondition && count === 0){
+            if(count === 0){
                 return i;
             }
         }
@@ -61,9 +64,6 @@ export default class Parser{
         }
     }
 
-    conditionalHandler(start, end, key){
-
-    }
 
     initHandler(start, end, key){
         if(key === start){
@@ -131,10 +131,59 @@ export default class Parser{
             if(this.tokens[start+1].value === ")"){
                 this.leftRoot.value = this.tokens[start].value;
                 this.leftRoot.type = this.tokens[start].type;
-            } else {
+            } else if(this.tokens[start].type === "KEYWORD_TOKEN"){
+                this.generalHandler(start, end-1, key+2)
+            }else {
                 this.parsePlus(start, end, key);
             }
         }
+    }
+
+    conditionHandler(){
+
+    }
+
+    
+    conditionalHandler(start, end, key){
+        this.leftRoot.value = this.tokens[key]?.value;
+        this.leftRoot.type = this.tokens[key]?.type;
+        this.leftRoot.left = {left: null, right: null, value: null, type: null};
+        this.leftRoot.right = {left: null, right: null, value: null, type: null};
+        let substart, subend;
+        if(this.tokens[start+1].value==="("){
+            let bracesCount = 1; 
+            substart = start+2;
+            for(let i = substart; i<end; i++){
+                if(this.tokens[i].value === "("){
+                    bracesCount++;
+                } else if(this.tokens[i].value === ")"){
+                    bracesCount--;
+                } 
+                if(bracesCount === 0){
+                    subend = i; 
+                    break;
+                }
+            }
+            if(!subend){
+                alert("Error: You didn't close if condition with '('. " + this.tokens[substart].value + " " + substart + " " + end);
+            }
+            this.rightRoot = this.leftRoot.right
+            this.leftRoot = this.leftRoot.left;
+            this.conditionHandler();
+
+            if(this.tokens[subend+1].value === "{" && this.tokens[end].value === "}"){ 
+                this.parse(subend+2, this.rightRoot);
+            } else{
+                alert("Error: You didn't open/close if body with '{'/'{'.");
+            }
+
+
+        } else{
+            alert("Error: Incorrect expression nearly if/elif statement");
+        }
+
+
+
     }
 
     expressionHandler(start, end, key) {
@@ -151,7 +200,6 @@ export default class Parser{
                     break;
                 case "if":
                 case "elif":
-                case "else":
                     this.conditionalHandler(start, end, key);
                     break;
                 case "else":
@@ -164,33 +212,29 @@ export default class Parser{
     
     
 
-    parse(){ 
-        let start = this.position;
-        let key = this.findKeyword(this.position, this.findEXP(start)) || this.position;
+    parse(position = this.position, root = this.root){ 
+        let start = position;
+        let key = this.findKeyword(position, this.findEXP(start)) || position;
         let end;
         if(this.set.has(this.tokens[key].value)){ 
             end  = this.findEXPcur(start);
         } else{
             end = this.findEXP(start);
         }
-        this.root.value = this.tokens[end]?.value;
-        this.root.type = this.tokens[end]?.type;
+        root.value = this.tokens[end]?.value;
+        root.type = this.tokens[end]?.type;
 
 
-        this.root.left = {left: null, right: null, value: null, type: null};
-        this.leftRoot = this.root.left;
+        root.left = {left: null, right: null, value: null, type: null};
+        this.leftRoot = root.left;
         this.expressionHandler(start, end, key);
 
-        this.position = end+1;
-        if(this.findEXP(this.position) < this.tokens.length || this.findEXP(this.position, '}') < this.tokens.length){ 
-            this.root.right = {left: null, right: null, value: null, type: null};
-            this.root = this.root.right;
-            this.parse();
+        position = end+1;
+        if(this.findEXP(position) < this.tokens.length || this.findEXPcur(position) < this.tokens.length){ 
+            root.right = {left: null, right: null, value: null, type: null};
+            root = root.right;
+            this.parse(position, root);
         }
-
-
-
-
     }
 
     getTree(){
