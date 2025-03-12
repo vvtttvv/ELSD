@@ -40,6 +40,7 @@ export default class Lexer {
           this.tokenizeSymbol();
         }
       }
+      console.log(this.tokens);
       return this.tokens;
     }
   
@@ -119,7 +120,7 @@ export default class Lexer {
     tokenizeSymbol() {   // Tokenize symbols such as operators and punctuation
       const ch = this.advance();
       // Check for multi-character operators (>=, <=)
-      if ((ch === '>' || ch === '<' || ch === '=') && this.peek() === '=') {
+      if ((ch === '>' || ch === '<' || ch === '=' || ch === '!') && this.peek() === '=') {
         const op = ch + this.advance();
         this.tokens.push({ type: "OPERATOR_TOKEN", value: op });
         return;

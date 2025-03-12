@@ -20,33 +20,36 @@ export default class Parser{
         return this.tokens[this.position];
     }
 
-    findEXP(start){
-        for(let i = start; i < this.tokens.length; i++){
+    findEXP(start, end){
+        for(let i = start; i < end; i++){
             if(this.tokens[i].value === ";"){
                 return i;
             }
         }
-        return this.tokens.length;
+        console.log(start);
+        return end;
     }
 
-    findEXPcur(start){
+    findEXPcur(start, end){
         let count = 0, endedCondition;
-        for(let i = start; i < this.tokens.length; i++){
+        for(let i = start; i < end; i++){
             if(this.tokens[i].value === "{"){
                 endedCondition=i;
+                break;
             }
         }
-        for(let i = endedCondition; i < this.tokens.length; i++){
+        for(let i = endedCondition; i < end; i++){
             if(this.tokens[i].value === "{"){
                 count++;
             } else if(this.tokens[i].value === "}"){
                 count--;
+                if(count === 0){
+                    return i;
+                }
             } 
-            if(count === 0){
-                return i;
-            }
         }
-        return this.tokens.length;
+        console.log(start); 
+        return end;
     }
 
     advance(){
@@ -76,9 +79,9 @@ export default class Parser{
             if(end-start === 4){ 
                 this.leftRoot.right = {left: null, right: null, value: this.tokens[end-1].value, type: this.tokens[end-1].type};
             } else if(this.tokens[start+3].type==="KEYWORD_TOKEN"){
-                this.leftRoot.left = {left: null, right: null, value: this.tokens[key+3].value, type: this.tokens[key+3].type};
-                this.leftRoot = this.leftRoot.left;
-                this.generalHandler(start+3, end, key+3);
+                this.leftRoot.right = {left: null, right: null, value: this.tokens[key+3].value, type: this.tokens[key+3].type};
+                this.rightRoot = this.leftRoot.right;
+                this.generalHandler(start+3, end, key+3, this.rightRoot);
             }
         } else {
             this.isGood = false;
@@ -94,7 +97,7 @@ export default class Parser{
                 if (this.tokens[key+2].type === "KEYWORD_TOKEN"){
                     this.leftRoot.left = {left: null, right: null, value: this.tokens[key+2].value, type: this.tokens[key+2].type};
                     this.leftRoot = this.leftRoot.left;
-                    this.generalHandler(start+2, end, key+2);
+                    this.generalHandler(start+2, end, key+2); 
                 } else{
                     this.leftRoot.left = {left: null, right: null, value: this.tokens[key+2].value, type: this.tokens[key+2].type};
                 }
@@ -107,42 +110,79 @@ export default class Parser{
         }
     }
 
-    parsePlus(start, end, key){  
-        this.leftRoot.value = this.tokens[start+1].value;
-        this.leftRoot.type = this.tokens[start+1].type;
-        if(this.tokens[start+3]?.value===")" || start+3>end){ 
-            this.leftRoot.left = {left: null, right: null, value: this.tokens[start].value, type: this.tokens[start].type};
-            this.leftRoot.right = {left: null, right: null, value: this.tokens[start+2].value, type: this.tokens[start+2].type};
-        } else{ 
-            this.leftRoot.left = {left: null, right: null, value: this.tokens[start].value, type: this.tokens[start].type};
-            this.leftRoot.right = {left: null, right: null, value: null, type: null};
-            this.leftRoot = this.leftRoot.right;
-            this.parsePlus(start+2, end, key);
+    parsePlus(start, end, key, root){   
+        if(this.tokens[start+1].value===","|| this.tokens[start+1].value==="+"){
+            root.value = this.tokens[start+1].value;
+            root.type = this.tokens[start+1].type; 
+            if(this.tokens[start+3]?.value===")" || start+3>end){ 
+                root.left = {left: null, right: null, value: this.tokens[start].value, type: this.tokens[start].type};
+                root.right = {left: null, right: null, value: this.tokens[start+2].value, type: this.tokens[start+2].type};
+            } else{ 
+                root.left = {left: null, right: null, value: this.tokens[start].value, type: this.tokens[start].type};
+                root.right = {left: null, right: null, value: null, type: null};
+                root = root.right;
+                this.parsePlus(start+2, end, key, root);
+            }
+        } else if(this.tokens[start].type==="KEYWORD_TOKEN"){ 
+            this.generalHandler(start, end, start, root);
         }
     }
 
-    generalHandler(start, end, key){ 
+    generalHandler(start, end, key, root=this.leftRoot){ 
         if(start===key && this.tokens[key+1].value === "("){
             start = key+2; 
-            this.leftRoot.value = this.tokens[key]?.value;
-            this.leftRoot.type = this.tokens[key]?.type;
-            this.leftRoot.left = {left: null, right: null, value: null, type: null};
-            this.leftRoot = this.leftRoot.left;
+            root.value = this.tokens[key]?.value;
+            root.type = this.tokens[key]?.type;  
+            root.left = {left: null, right: null, value: null, type: null};
+            root = root.left;
             if(this.tokens[start+1].value === ")"){
-                this.leftRoot.value = this.tokens[start].value;
-                this.leftRoot.type = this.tokens[start].type;
+                root.value = this.tokens[start].value;
+                root.type = this.tokens[start].type;
             } else if(this.tokens[start].type === "KEYWORD_TOKEN"){
-                this.generalHandler(start, end-1, key+2)
-            }else {
-                this.parsePlus(start, end, key);
+                this.generalHandler(start, end-1, key+2, root)
+            } else {
+                this.parsePlus(start, end-1, key, root);
             }
         }
     }
 
-    conditionHandler(){
+    parseExpression(start, end, node){ 
+        node.value = this.tokens[start]?.value;
+        node.type = this.tokens[start]?.type;
+        node.left = null;
+        node.right = null;
+        if (["resolve", "possible", "getOxidixngs", "getReducings", "show", 
+            "getMolecWeight", "getVolume", "getV", "isAcid", "isBase"].includes(this.tokens[start].value)){
+           this.generalHandler(start, end, start, node);
+        }
 
+        return node;
     }
 
+    conditionHandler(start, end, root) { 
+        let opIndex, hasIndex;
+        let number = 0; 
+        for(let i = start+1; i < end; i++){
+            if(this.tokens[i].type === "OPERATOR_TOKEN" && this.tokens[i].value !== "+"){
+                hasIndex = true;
+                opIndex = i;
+                number++;
+            }
+            if(number>1){
+                alert("Error: You can't use two or more comparisons operators.")
+            }
+            if(hasIndex){    
+                root.value = this.tokens[opIndex].value;
+                root.type = this.tokens[opIndex].type;
+                root.left = {left: null, right: null, value: null, type: null};
+                root.right = {left: null, right: null, value: null, type: null};
+                root.left = this.parseExpression(start, opIndex, root.left);
+                root.right = this.parseExpression(opIndex+1, end, root.right);  
+            } else{
+                this.generalHandler(start, end, start, root);
+            }
+        }
+    }
     
     conditionalHandler(start, end, key){
         this.leftRoot.value = this.tokens[key]?.value;
@@ -168,22 +208,18 @@ export default class Parser{
                 alert("Error: You didn't close if condition with '('. " + this.tokens[substart].value + " " + substart + " " + end);
             }
             this.rightRoot = this.leftRoot.right
-            this.leftRoot = this.leftRoot.left;
-            this.conditionHandler();
+            this.leftRoot = this.leftRoot.left; 
+            this.conditionHandler(substart, subend, this.leftRoot);
 
             if(this.tokens[subend+1].value === "{" && this.tokens[end].value === "}"){ 
-                this.parse(subend+2, this.rightRoot);
+                this.parse(subend+2, this.rightRoot, end);
             } else{
                 alert("Error: You didn't open/close if body with '{'/'{'.");
             }
-
-
         } else{
+            console.log(this.tokens[start].value + " " + this.tokens[start+2].value);
             alert("Error: Incorrect expression nearly if/elif statement");
         }
-
-
-
     }
 
     expressionHandler(start, end, key) {
@@ -212,17 +248,20 @@ export default class Parser{
     
     
 
-    parse(position = this.position, root = this.root){ 
-        let start = position;
+    parse(position = this.position, root = this.root, fullEnd = this.tokens.length){ 
+        while(this.tokens[position].value==="}"){
+            position = position + 1;
+        }
+        let start = position; 
         let key = this.findKeyword(position, this.findEXP(start)) || position;
         let end;
         if(this.set.has(this.tokens[key].value)){ 
-            end  = this.findEXPcur(start);
+            end  = this.findEXPcur(start, fullEnd);
         } else{
-            end = this.findEXP(start);
+            end = this.findEXP(start, fullEnd);
         }
         root.value = this.tokens[end]?.value;
-        root.type = this.tokens[end]?.type;
+        root.type = this.tokens[end]?.type; 
 
 
         root.left = {left: null, right: null, value: null, type: null};
@@ -230,9 +269,9 @@ export default class Parser{
         this.expressionHandler(start, end, key);
 
         position = end+1;
-        if(this.findEXP(position) < this.tokens.length || this.findEXPcur(position) < this.tokens.length){ 
+        if(this.findEXP(position, fullEnd) < fullEnd || this.findEXPcur(position, fullEnd) < fullEnd){ 
             root.right = {left: null, right: null, value: null, type: null};
-            root = root.right;
+            root = root.right; 
             this.parse(position, root);
         }
     }
