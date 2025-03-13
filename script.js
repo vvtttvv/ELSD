@@ -1,5 +1,6 @@
 import Lexer from "./lexer.js";
 import Parser from "./parser.js";
+import Interpretor from "./interpretor.js";
 
 //To clear input
 document.getElementById("clear").onclick = function() {
@@ -20,8 +21,9 @@ document.getElementById("run").onclick = function() {
         document.getElementById("output").appendChild(outputElement);
     });
 
-    const parser = new Parser(tokens);
-    console.log(parser.getTree());
+    const parser = new Parser(tokens); 
+    const interpretor = new Interpretor(parser.getTree());
+    interpretor.interpret();
 };
 
 // To make code typing more convenient

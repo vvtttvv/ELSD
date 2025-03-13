@@ -26,7 +26,6 @@ export default class Parser{
                 return i;
             }
         }
-        console.log(start);
         return end;
     }
 
@@ -48,7 +47,6 @@ export default class Parser{
                 }
             } 
         }
-        console.log(start); 
         return end;
     }
 
@@ -78,7 +76,7 @@ export default class Parser{
             } 
             if(end-start === 4){ 
                 this.leftRoot.right = {left: null, right: null, value: this.tokens[end-1].value, type: this.tokens[end-1].type};
-            } else if(this.tokens[start+3].type==="KEYWORD_TOKEN"){
+            } else if(this.tokens[start+3]?.type==="KEYWORD_TOKEN"){
                 this.leftRoot.right = {left: null, right: null, value: this.tokens[key+3].value, type: this.tokens[key+3].type};
                 this.rightRoot = this.leftRoot.right;
                 this.generalHandler(start+3, end, key+3, this.rightRoot);
