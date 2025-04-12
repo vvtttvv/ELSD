@@ -6,7 +6,9 @@ import {
   validCombustionFuels,
   acids,
   bases,
-  physicalConstants
+  physicalConstants,
+  solubilityTable,
+  extractIons
 } from './chemistryData.js';
 
 
@@ -226,14 +228,74 @@ export default class Interpretor {
 
   // Chemistry Functions
 
+  // isReactionPossible(reactionString) {
+  //   // Check for the arrow and then validate combustion reaction.
+  //   if (!reactionString.includes("->")) return false;
+  //   const [reactants, products] = reactionString
+  //     .split("->")
+  //     .map((s) => s.trim());
+  //   const requiredProducts = ["CO2", "H2O"];
+  //   return this.isCombustionReaction(reactants, products, requiredProducts);
+  // }
+
   isReactionPossible(reactionString) {
-    // Check for the arrow and then validate combustion reaction.
+    // Checking for the arrow
     if (!reactionString.includes("->")) return false;
-    const [reactants, products] = reactionString
-      .split("->")
-      .map((s) => s.trim());
-    const requiredProducts = ["CO2", "H2O"];
-    return this.isCombustionReaction(reactants, products, requiredProducts);
+    
+    const [reactants, products] = reactionString.split("->").map(s => s.trim());
+    const reactantParts = reactants.split("+").map(s => s.trim());
+    const productParts = products.split("+").map(s => s.trim());
+    
+    // Checking for combustion reaction
+    if (this.isCombustionReaction(reactants, products, ["CO2", "H2O"])) {
+      return true;
+    }
+    
+    // Check for precipitation reaction (double replacement)
+    if (reactantParts.length === 2 && productParts.length === 2) {
+      // Identifying potential double replacement reaction
+      const ions1 = extractIons(reactantParts[0]);
+      const ions2 = extractIons(reactantParts[1]);
+      
+      if (ions1.cation && ions1.anion && ions2.cation && ions2.anion) {
+        // Checking if both reactants are soluble
+        const react1Solubility = solubilityTable[`${ions1.anion}_${ions1.cation}`];
+        const react2Solubility = solubilityTable[`${ions2.anion}_${ions2.cation}`];
+        
+        if ((react1Solubility === "P" || react1Solubility === "M") && 
+            (react2Solubility === "P" || react2Solubility === "M")) {
+          
+          // Now checking for potential precipitation in products
+          // The products would have swapped ions
+          const product1Key = `${ions1.anion}_${ions2.cation}`;
+          const product2Key = `${ions2.anion}_${ions1.cation}`;
+          
+          const prod1Solubility = solubilityTable[product1Key];
+          const prod2Solubility = solubilityTable[product2Key];
+          
+          // If at least one product is insoluble, reaction is likely
+          if (prod1Solubility === "H" || prod2Solubility === "H") {
+            return true;
+          }
+        }
+      }
+    }
+    
+    // Check for acid-base neutralization
+    if (reactantParts.length === 2) {
+      const acid = reactantParts.find(r => this.isAcid(r));
+      const base = reactantParts.find(r => this.isBase(r));
+      
+      if (acid && base) {
+        // Acid-base reactions typically produce water and a salt
+        if (productParts.includes("H2O")) {
+          return true;
+        }
+      }
+    }
+    
+    // If no specific reaction type identified, return false
+    return false;
   }
 
   resolveReaction(reactionString) {
