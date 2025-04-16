@@ -1,16 +1,10 @@
-import { 
-  periodicTable, 
-  hydrocarbonWeights, 
-  oxidizingAgents, 
-  reducingAgents, 
-  validCombustionFuels,
-  acids,
-  bases,
-  physicalConstants,
-  solubilityTable,
-  extractIons
-} from './chemistryData.js';
-
+import { periodicTable } from './chemistryData/periodicTable.js';
+import { hydrocarbonWeights } from './chemistryData/hydrocarbons.js';
+import { oxidizingAgents, reducingAgents, validCombustionFuels } from './chemistryData/redoxAgents.js';
+import { acids, bases } from './chemistryData/acidsBases.js';
+import { physicalConstants } from './chemistryData/constants.js';
+import { solubilityTable } from './chemistryData/solubilityTable.js';
+import { extractIons } from './chemistryData/extractIons.js';
 
 export default class Interpretor {
   constructor(parseTree, outputCallback) {
