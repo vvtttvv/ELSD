@@ -222,16 +222,59 @@ export default class Interpretor {
 
   // Chemistry Functions
 
-  // isReactionPossible(reactionString) {
-  //   // Check for the arrow and then validate combustion reaction.
-  //   if (!reactionString.includes("->")) return false;
-  //   const [reactants, products] = reactionString
-  //     .split("->")
-  //     .map((s) => s.trim());
-  //   const requiredProducts = ["CO2", "H2O"];
-  //   return this.isCombustionReaction(reactants, products, requiredProducts);
-  // }
+  isElement(compound) {
+    return /^[A-Z][a-z]?$/.test(compound.trim()); // Zn, O, Fe, etc.
+  }
+  
+  isCompound(compound) {
+    return /[A-Z][a-z]?[0-9]?/.test(compound.trim()) && compound.length > 1;
+  }
 
+  // like Fe + CuSO4 = FeSO4 + Cu
+  isSingleReplacementReaction(reactants, products) {
+    const reactantParts = reactants.split("+").map(s => s.trim());
+    const productParts = products.split("+").map(s => s.trim());
+  
+    if (reactantParts.length === 2 && productParts.length === 2) {
+      const hasElement = reactantParts.some(r => this.isElement(r));
+      const hasCompound = reactantParts.some(r => this.isCompound(r));
+  
+      const productHasElement = productParts.some(p => this.isElement(p));
+      const productHasCompound = productParts.some(p => this.isCompound(p));
+  
+      if (hasElement && hasCompound && productHasElement && productHasCompound) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  isSynthesisOrDecomposition(reactants, products) {
+    const reactantParts = reactants.split("+").map(s => s.trim());
+    const productParts = products.split("+").map(s => s.trim());
+  
+    // A + B → AB
+    if (reactantParts.length >= 2 && productParts.length === 1) {
+      return true;
+    }
+  
+    // AB → A + B
+    if (reactantParts.length === 1 && productParts.length >= 2) {
+      return true;
+    }
+  
+    return false;
+  }
+
+  isRedoxReaction(reactants) {
+    const reactantParts = reactants.split("+").map(s => s.trim());
+  
+    const hasOxidizer = reactantParts.some(r => oxidizingAgents.includes(r));
+    const hasReducer = reactantParts.some(r => reducingAgents.includes(r));
+  
+    return hasOxidizer && hasReducer;
+  }  
+  
   isReactionPossible(reactionString) {
     // Checking for the arrow
     if (!reactionString.includes("->")) return false;
@@ -280,12 +323,24 @@ export default class Interpretor {
       const acid = reactantParts.find(r => this.isAcid(r));
       const base = reactantParts.find(r => this.isBase(r));
       
-      if (acid && base) {
-        // Acid-base reactions typically produce water and a salt
-        if (productParts.includes("H2O")) {
-          return true;
-        }
+      if (acid && base && productParts.includes("H2O")) {
+        return true;
       }
+    }
+
+    // Single replacement
+    if (this.isSingleReplacementReaction(reactants, products)) {
+      return true;
+    }
+
+    // Synthesis or decomposition
+    if (this.isSynthesisOrDecomposition(reactants, products)) {
+      return true;
+    }
+
+    // Redox reaction
+    if (this.isRedoxReaction(reactants)) {
+      return true;
     }
     
     // If no specific reaction type identified, return false
