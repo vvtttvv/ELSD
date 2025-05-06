@@ -3,7 +3,7 @@ import { hydrocarbonWeights } from './chemistryData/compounds/hydrocarbons/hydro
 import { oxidizingAgents, reducingAgents, validCombustionFuels } from './chemistryData/reactions/redoxAgents.js';
 import { physicalConstants } from './chemistryData/core/constants.js';
 import { solubilityTable } from './chemistryData/core/solubilityTable.js';
-import { extractIons } from './chemistryData/extractIons.js';
+import { extractIons } from './chemistryData/core/extractIons.js';
 import { ReactionAnalyzer } from './chemistryData/reactionAnalyzer.js';
 
 
@@ -165,7 +165,8 @@ export default class Interpretor {
           console.log(`Resolved variable ${node.value} =`, value);
           return value;
         } else {
-          throw new Error(`Undefined variable: ${node.value}`);
+          console.warn(`Warning: Undefined variable: ${node.value}`);
+          return null;
         }
       default:
         return null;
@@ -287,12 +288,11 @@ export default class Interpretor {
   }
 
   resolveReaction(reactionString) {
-    // Very basic "balancing" just reformats the equation.
-    const [left, right] = reactionString.split("->").map((s) => s.trim());
-    const leftParts = left.split("+").map((s) => s.trim());
-    const rightParts = right.split("+").map((s) => s.trim());
-    return leftParts.join(" + ") + " → " + rightParts.join(" + ");
-  }
+    if (!this.reactionAnalyzer) {
+      this.reactionAnalyzer = new ReactionAnalyzer();
+    }
+    return this.reactionAnalyzer.balanceEquation(reactionString);
+  }  
 
   getOxidizingAgents(reactionString) {
     // Return only the oxidizing agents identified from the reaction string.

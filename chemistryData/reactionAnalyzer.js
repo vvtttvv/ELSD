@@ -2,7 +2,7 @@ import { OxideHandler } from './handlers/oxideHandler.js';
 import { BaseHandler } from './handlers/baseHandler.js';
 import { AcidHandler } from './handlers/acidHandler.js';
 import { SaltHandler } from './handlers/saltHandler.js';
-
+import { balanceEquation } from './equationBalancer.js';
 /**
  * Main ReactionAnalyzer class that coordinates all compound handlers
  * and provides a unified interface for reaction analysis
@@ -156,8 +156,6 @@ export class ReactionAnalyzer {
    * @returns {string} - Balanced reaction string
    */
   balanceEquation(reactionString) {
-    // This is a placeholder - equation balancing is complex and would
-    // need a more sophisticated implementation
-    return reactionString;
-  }
+    return balanceEquation(reactionString);
+  } 
 }
