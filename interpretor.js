@@ -289,10 +289,11 @@ export default class Interpretor {
 
   resolveReaction(reactionString) {
     if (!this.reactionAnalyzer) {
-      this.reactionAnalyzer = new ReactionAnalyzer();
+      // Pass parseFormula from Interpretor to ReactionAnalyzer
+      this.reactionAnalyzer = new ReactionAnalyzer(this.parseFormula.bind(this));
     }
     return this.reactionAnalyzer.balanceEquation(reactionString);
-  }  
+  }    
 
   getOxidizingAgents(reactionString) {
     // Return only the oxidizing agents identified from the reaction string.

@@ -10,6 +10,7 @@ import { balanceEquation } from './equationBalancer.js';
 export class ReactionAnalyzer {
   constructor() {
     // Initialize all handlers
+    this.parseFormula = parseFormula;
     this.oxideHandler = new OxideHandler();
     this.baseHandler = new BaseHandler();
     this.acidHandler = new AcidHandler();
@@ -156,6 +157,6 @@ export class ReactionAnalyzer {
    * @returns {string} - Balanced reaction string
    */
   balanceEquation(reactionString) {
-    return balanceEquation(reactionString);
-  } 
+    return balanceEquation(reactionString, this.parseFormula);
+  }  
 }
