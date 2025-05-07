@@ -5,7 +5,7 @@ import { physicalConstants } from './chemistryData/core/constants.js';
 import { solubilityTable } from './chemistryData/core/solubilityTable.js';
 import { extractIons } from './chemistryData/core/extractIons.js';
 import { ReactionAnalyzer } from './chemistryData/reactionAnalyzer.js';
-
+import { balanceEquation } from './chemistryData/equationBalancer.js';
 
 export default class Interpretor {
   constructor(parseTree, outputCallback) {
@@ -292,7 +292,7 @@ export default class Interpretor {
       // Pass parseFormula from Interpretor to ReactionAnalyzer
       this.reactionAnalyzer = new ReactionAnalyzer(this.parseFormula.bind(this));
     }
-    return this.reactionAnalyzer.balanceEquation(reactionString);
+      return balanceEquation(reactionString, this.parseFormula.bind(this));
   }    
 
   getOxidizingAgents(reactionString) {

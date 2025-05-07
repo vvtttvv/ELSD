@@ -32,7 +32,7 @@ export function balanceEquation(reactionString, parseFormula) {
     // Format balanced equation using solution vector
     const left = reactants.map((r, i) => `${vector[i]} ${r}`).join(" + ");
     const right = products.map((p, i) => `${vector[i + reactants.length]} ${p}`).join(" + ");
-    return `${left} → ${right}`;
+    return `${left} -> ${right}`;
   }
   
   // Solves a homogeneous system Ax = 0 using rational Gaussian elimination
@@ -137,4 +137,12 @@ export function balanceEquation(reactionString, parseFormula) {
   // Negates a fraction
   function negateFrac(f) {
     return { num: -f.num, den: f.den };
-  }  
+  }
+
+// Input Example
+/*
+let rxn = "Fe + O2 -> Fe2O3";
+let balanced = resolve(rxn);
+show(rxn);
+show(balanced);
+*/
