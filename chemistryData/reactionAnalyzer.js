@@ -2,6 +2,7 @@ import { OxideHandler } from './handlers/oxideHandler.js';
 import { BaseHandler } from './handlers/baseHandler.js';
 import { AcidHandler } from './handlers/acidHandler.js';
 import { SaltHandler } from './handlers/saltHandler.js';
+
 /**
  * Main ReactionAnalyzer class that coordinates all compound handlers
  * and provides a unified interface for reaction analysis
@@ -27,48 +28,52 @@ export class ReactionAnalyzer {
   }
 
   /**
-   * Analyzes a reaction string by delegating to appropriate handlers
+   * Analyzes a reaction string by trying all handlers until one returns a possible match
    * @param {string} reactionString - Reaction string in format "A + B -> C + D"
    * @param {Object} options - Additional options (like concentrated acid)
    * @returns {Object} - Comprehensive analysis of the reaction
    */
   analyzeReaction(reactionString, options = {}) {
-    // Parse the reaction string
+    console.log("analyzeReaction() called with:", reactionString);
     const parts = reactionString.split("->");
     if (parts.length !== 2) {
       return { valid: false, error: "Invalid reaction format", possible: false };
     }
-    
+
     const reactants = parts[0].split("+").map(r => r.trim());
     const givenProducts = parts[1].split("+").map(p => p.trim());
-    
-    // Check for empty reactants or products
+
     if (reactants.length === 0 || givenProducts.length === 0) {
       return { valid: false, error: "Missing reactants or products", possible: false };
     }
-    
-    // Identify the types of compounds involved
-    const compoundTypes = this.identifyCompoundTypes(reactants);
-    
-    // Choose the appropriate handler based on compound types and priority
-    if (compoundTypes.hasAcid) {
-      return this.acidHandler.analyzeReaction(reactionString, options.concentratedAcid || false);
-    } else if (compoundTypes.hasBase) {
-      return this.baseHandler.analyzeReaction(reactionString);
-    } else if (compoundTypes.hasOxide) {
-      return this.oxideHandler.analyzeReaction(reactionString);
-    } else if (compoundTypes.hasSalt) {
-      return this.saltHandler.analyzeReaction(reactionString);
+
+    const handlers = [
+      this.acidHandler,
+      this.baseHandler,
+      this.oxideHandler,
+      this.saltHandler
+    ];
+
+    for (const handler of handlers) {
+      console.log("Trying handler:", handler.constructor.name);
+      try {
+        const result = handler.analyzeReaction(reactionString, options.concentratedAcid || false);
+        if (result?.possible) {
+          console.log("Match found in:", handler.constructor.name);
+          return result;
+        }
+      } catch (err) {
+        console.warn("Handler error in", handler.constructor.name, ":", err.message);
+      }
     }
-    
-    // If no specific handler is available
+
     return {
       valid: false,
       possible: false,
-      error: "Unable to determine reaction type",
+      error: "No handler recognized the reaction",
       reactants,
       givenProducts,
-      compoundTypes
+      compoundTypes: this.identifyCompoundTypes(reactants)
     };
   }
 
@@ -93,11 +98,10 @@ export class ReactionAnalyzer {
    * @returns {Array|null} - Predicted products or null if reaction not possible
    */
   predictProducts(reactionString, options = {}) {
-    // Handle case where only reactants are provided
     if (!reactionString.includes("->")) {
       reactionString = reactionString + " -> ?";
     }
-    
+
     const analysis = this.analyzeReaction(reactionString, options);
     return analysis.predictedProducts || null;
   }
@@ -108,7 +112,6 @@ export class ReactionAnalyzer {
    * @returns {Object} - Detailed information about the compound
    */
   getCompoundInfo(formula) {
-    // Check what type of compound it is and delegate to appropriate handler
     if (this.acidHandler.isAcid(formula)) {
       const acidInfo = this.acidHandler.classifyAcid(formula);
       return {
@@ -142,19 +145,10 @@ export class ReactionAnalyzer {
         formula
       };
     }
-    
+
     return {
       type: "unknown",
       formula
     };
   }
-
-  /**
-   * Balances a chemical equation
-   * @param {string} reactionString - Unbalanced reaction string
-   * @returns {string} - Balanced reaction string
-    balanceEquation(reactionString) {
-    return balanceEquation(reactionString, this.parseFormula);
-  }
-    **/  
 }

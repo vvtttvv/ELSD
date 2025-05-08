@@ -86,16 +86,14 @@ export function isSalt(formula) {
   // Pattern 1: Metal + non-metal/polyatomic ion
   const { cation, anion } = extractIons(formula);
   if (cation && anion) {
-    // Check if cation is a metal (or ammonium)
     if (isMetal(cation) || cation === 'NH4') {
-      // Check if anion is a recognized acid radical
-      for (const radical in acidRadicals) {
-        if (formula.includes(acidRadicals[radical])) {
-          return true;
-        }
+      const acidAnions = Object.values(acidRadicals);
+      if (acidAnions.includes(anion)) {
+        return true;
       }
     }
   }
+
   
   // Pattern 2: Contains both metal and non-metal/polyatomic ion but not H, OH
   if (formula.match(/[A-Z]/) && 

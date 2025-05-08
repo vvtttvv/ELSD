@@ -277,15 +277,38 @@ export default class Interpretor {
     return hasOxidizer && hasReducer;
   }  
   
+  // isReactionPossible(reactionString) {
+  //   if (!this.reactionAnalyzer) {
+  //     this.reactionAnalyzer = new ReactionAnalyzer();
+  //   }
+    
+  //   const result = this.reactionAnalyzer.isPossible(reactionString, {
+  //     concentratedAcid: reactionString.includes("conc") || reactionString.includes("concentrated")
+  //   });
+    
+  //   if (result) {
+  //     this.outputCallback(`The reaction "${reactionString}" is chemically possible.`);
+  //   } else {
+  //     this.outputCallback(`The reaction "${reactionString}" is not chemically possible.`);
+  //   }
+    
+  //   return result;
+  // }
+
   isReactionPossible(reactionString) {
     if (!this.reactionAnalyzer) {
       this.reactionAnalyzer = new ReactionAnalyzer();
     }
-    
-    return this.reactionAnalyzer.isPossible(reactionString, {
+  
+    const result = this.reactionAnalyzer.isPossible(reactionString, {
       concentratedAcid: reactionString.includes("conc") || reactionString.includes("concentrated")
     });
-  }
+  
+    const msg = `The reaction "${reactionString}" is ${result ? "" : "not "}chemically possible.`;
+    this.outputCallback(msg);
+  
+    return result;
+  }  
 
   resolveReaction(reactionString) {
     if (!this.reactionAnalyzer) {

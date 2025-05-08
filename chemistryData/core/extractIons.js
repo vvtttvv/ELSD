@@ -1,37 +1,35 @@
-// Function to extract cation and anion from a compound formula
 export function extractIons(formula) {
-    // we will need to improve it since this is just a headstart
-    // Common cations
-    const cations = {
-      "H": 1, "Li": 1, "K": 1, "Na": 1, "NH4": 1,
-      "Ba": 2, "Ca": 2, "Mg": 2, "Al": 3, "Cr": 3,
-      "Fe2": 2, "Fe3": 3, "Ni": 2, "Co": 2, "Mn": 2, 
-      "Zn": 2, "Ag": 1, "Hg": 2, "Rb": 1, "Sn": 2, "Cu": 2
-    };
-    
-    // Common anions
-    const anions = {
-      "OH": -1, "F": -1, "Cl": -1, "Br": -1, "I": -1,
-      "S": -2, "SO4": -2, "SO3": -2, "PO4": -3, "CO3": -2,
-      "SiO3": -2, "NO3": -1, "CH3COO": -1
-    };
-    
-    let cation = null;
-    let anion = null;
+  const knownCations = [
+    "NH4", "Li", "Na", "K", "Rb", "Cs",
+    "Be", "Mg", "Ca", "Sr", "Ba",
+    "Al", "Fe", "Fe2", "Fe3", "Zn", "Cu", "Ag", "Pb", "Sn", "Hg"
+  ];
 
-    for (const c in cations) {
-        if (formula.includes(c)) {
-        cation = c;
-        break;
-        }
+  const knownAnions = [
+    "OH", "NO3", "Cl", "Br", "I", "F",
+    "SO4", "SO3", "CO3", "HCO3", "PO4", "HPO4", "SiO3",
+    "CH3COO", "ClO", "ClO2", "ClO3", "ClO4", "MnO4", "CrO4", "Cr2O7"
+  ];
+
+  let cation = null;
+  let anion = null;
+
+  // Try to find the longest matching cation in the formula
+  for (const cat of knownCations.sort((a, b) => b.length - a.length)) {
+    if (formula.includes(cat)) {
+      cation = cat;
+      break;
     }
-
-    for (const a in anions) {
-        if (formula.includes(a)) {
-        anion = a;
-        break;
-        }
-    }
-
-    return { cation, anion };
   }
+
+  // Try to find the longest matching anion in the formula (excluding the cation match)
+  const tail = formula.replace(cation, '');
+  for (const an of knownAnions.sort((a, b) => b.length - a.length)) {
+    if (tail.includes(an)) {
+      anion = an;
+      break;
+    }
+  }
+
+  return { cation, anion };
+}
