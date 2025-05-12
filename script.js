@@ -65,6 +65,43 @@ document.getElementById("input").addEventListener("keydown", function (event) {
   }
 });
 
+
+// Documentation popup
+document.getElementById("doc").onclick = function () {
+  const modal = document.getElementById("docModal");
+  modal.style.display = "block";
+
+  document.getElementById("docContent").innerHTML = `
+  <h3>📘 ChemOrg DSL - Function Reference</h3>
+  <ul>
+    <li><code>resolve(expression, outputType?)</code> – balances the chemical equation. Optional output: "balanced", "steps", or "raw".</li>
+    <li><code>possible(expression)</code> – returns true if the reaction is chemically feasible.</li>
+    <li><code>getOxidixngs(expression)</code> – extracts the oxidizing agents from a reaction.</li>
+    <li><code>getReducings(expression)</code> – extracts the reducing agents from a reaction.</li>
+    <li><code>show(expression)</code> – displays the expression in the output window.</li>
+    <li><code>getMolecWeight(expression, includeIsotopes?)</code> – calculates molecular weight. Optional: use isotopes (true/false).</li>
+    <li><code>getVolume(expression, "custom"?, temperature?, pressure?)</code> – calculates gas volume under standard or custom conditions.</li>
+    <li><code>getV(volume, mass)</code> – calculates specific volume using volume and molecular mass.</li>
+    <li><code>isAcid(expression)</code> – returns true if the compound is acidic.</li>
+    <li><code>isBase(expression)</code> – returns true if the compound is basic.</li>
+    <li><code>visualise(expression)</code> – shows a 2D graphical representation of the molecule or formula.</li>
+  </ul>
+`;
+
+};
+ 
+document.querySelector(".close-button").onclick = function () {
+  document.getElementById("docModal").style.display = "none";
+};
+ 
+window.onclick = function (event) {
+  const modal = document.getElementById("docModal");
+  if (event.target === modal) {
+    modal.style.display = "none";
+  }
+};
+
+
 /*
 let variable = "C6H6";
 variable = "C2H6";
