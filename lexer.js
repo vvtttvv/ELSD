@@ -82,6 +82,7 @@ export default class Lexer {
         "getVolume",
         "getV",
         "isAcid",
+        "visualise",
         "isBase"
       ]);
       if (keywords.has(text)) {
