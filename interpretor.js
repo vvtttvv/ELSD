@@ -185,7 +185,10 @@ export default class Interpretor {
       case "getOxidixngs":
         return this.getOxidizingAgents(args[0]);
       case "getMolecWeight":
+        console.log("Checking reaction possibility for:", args[0]);
         return this.getMolecularWeight(args[0]);
+      case "visualize":
+        return this.visualize(args[0]);
       case "getVolume":
         return this.getVolume(args[0], args[1]);
       case "getV":
@@ -301,7 +304,7 @@ export default class Interpretor {
     return agents.oxidizing;
   }
 
-  getMolecularWeight(formula) {
+  getMolecularWeight(formula) { 
     // First, try a lookup for common hydrocarbons.
 
     if (hydrocarbonWeights[formula]) {
@@ -313,6 +316,30 @@ export default class Interpretor {
     return parsed.reduce((sum, [element, count]) => {
       return sum + (periodicTable[element] || 0) * count;
     }, 0);
+  }
+
+  visualize(formula) {
+    console.log("Visualizing:", formula);
+    function visualizaer(formula) {
+      initRDKitModule().then(RDKit => {
+        const mol = RDKit.get_mol("c1ccccc1");
+        const molBlock = mol.get_molblock();
+        console.log(molBlock); 
+        const kekuleMol = Kekule.IO.loadFormatData(molBlock, 'mol');
+        var parentElem = document.getElementById('visualize');
+        Kekule.DomUtils.clearChildContent(parentElem);
+        var drawBridgeManager = Kekule.Render.DrawBridge2DMananger;
+        var drawBridge = drawBridgeManager.getPreferredBridgeInstance();
+        var dim = Kekule.HtmlElementUtils.getElemOffsetDimension(parentElem); 
+        var context = drawBridge.createContext(parentElem, dim.width, dim.height);  
+        var rendererClass = Kekule.Render.get2DRendererClass(kekuleMol);
+        var renderer = new rendererClass(kekuleMol, drawBridge);  // create concrete renderer object and bind it with mol and draw bridge
+        var configObj = Kekule.Render.Render2DConfigs.getInstance();
+        var options = Kekule.Render.RenderOptionUtils.convertConfigsToPlainHash(configObj); 
+        renderer.draw(context, {'x': dim.width / 2, 'y': dim.height / 2}, options);
+      });
+    }
+    return visualizaer(formula);
   }
 
   getVolume(mass, density) {
