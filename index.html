@@ -3,7 +3,12 @@
     <head>
         <meta charset="UTF-8">
         <title>DSL</title>
-        <link rel="stylesheet" type="text/css" href="styles.css">
+        <link rel="stylesheet" type="text/css" href="styles.css">  
+        <script src="./raphael-2.3.0/raphael.min.js"></script>
+        <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
+        <!--<script src="Three.js"></script>   3d visualization -->
+        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/kekule/dist/themes/default/kekule.css" />
+        <script src="https://cdn.jsdelivr.net/npm/kekule/dist/kekule.min.js"></script>
     </head>
     <body>
         <div class="wrapper">
@@ -31,8 +36,8 @@
                     </p>
                 </div>
                 </div>
-
             </div>
+            <div id="visualize"></div>
         </div>
  
         <script type="module" src="script.js"></script>
