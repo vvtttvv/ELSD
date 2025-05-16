@@ -80,7 +80,7 @@ Checks whether a given chemical reaction is feasible based on known compound int
 **Output:** `true`
 
 ## Balance reaction
-Balances a chemical reaction. Optionally specify output type: `"balanced"`, `"steps"`, or `"raw"`.  
+Balances a chemical reaction.  
 **Input:** `show(resolve("Fe + O2 -> Fe2O3"));`  
 **Output:** `"4 Fe + 3 O2 -> 2 Fe2O3"`
 
@@ -105,8 +105,8 @@ Computes volume using mass and density.
 **Output:** `5`
 
 ## Gas volume
-Calculates volume of a gas using the Ideal Gas Law. Optional arguments: `"custom"`, temperature, pressure.  
-**Input:** `show(getVolume(1, "custom", 273.15, 101.325));`  
+Calculates volume of a gas using the Ideal Gas Law. Optional arguments: temperature, pressure.  
+**Input:** `show(getVolume(1, 273.15, 101.325));`  
 **Output:** `22.414`
 
 ## Specific volume
