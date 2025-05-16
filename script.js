@@ -66,28 +66,125 @@ document.getElementById("input").addEventListener("keydown", function (event) {
 });
 
 
-// Documentation popup
 document.getElementById("doc").onclick = function () {
   const modal = document.getElementById("docModal");
   modal.style.display = "block";
 
   document.getElementById("docContent").innerHTML = `
-  <h3>📘 ChemOrg DSL - Function Reference</h3>
-  <ul>
-    <li><code>resolve(expression, outputType?)</code> – balances the chemical equation. Optional output: "balanced", "steps", or "raw".</li>
-    <li><code>possible(expression)</code> – returns true if the reaction is chemically feasible.</li>
-    <li><code>getOxidixngs(expression)</code> – extracts the oxidizing agents from a reaction.</li>
-    <li><code>getReducings(expression)</code> – extracts the reducing agents from a reaction.</li>
-    <li><code>show(expression)</code> – displays the expression in the output window.</li>
-    <li><code>getMolecWeight(expression, includeIsotopes?)</code> – calculates molecular weight. Optional: use isotopes (true/false).</li>
-    <li><code>getVolume(expression, "custom"?, temperature?, pressure?)</code> – calculates gas volume under standard or custom conditions.</li>
-    <li><code>getV(volume, mass)</code> – calculates specific volume using volume and molecular mass.</li>
-    <li><code>isAcid(expression)</code> – returns true if the compound is acidic.</li>
-    <li><code>isBase(expression)</code> – returns true if the compound is basic.</li>
-    <li><code>visualise(expression)</code> – shows a 2D graphical representation of the molecule or formula.</li>
-  </ul>
-`;
+    <h2>ChemOrg DSL - Function Reference</h2>
 
+    <!-- Variable Declaration -->
+    <div class="doc-section">
+      <h4><code>let variable = value</code></h4>
+      <p>Declares and assigns a variable in the local environment.</p>
+      <pre><code>let x = "C6H6";</code></pre>
+    </div>
+
+    <!-- Variable Assignment -->
+    <div class="doc-section">
+      <h4><code>variable = value</code></h4>
+      <p>Reassigns an existing variable to a new value.</p>
+      <pre><code>x = "H2O";</code></pre>
+    </div>
+
+    <!-- Output Display -->
+    <div class="doc-section">
+      <h4><code>show(expression)</code></h4>
+      <p>Outputs the result of any evaluated expression in the output panel.</p>
+      <pre><code>show("Hello, ChemOrg!");</code></pre>
+    </div>
+
+    <!-- Conditional Logic -->
+    <div class="doc-section">
+      <h4><code>if / elif / else</code></h4>
+      <p>Conditionally executes code blocks based on boolean evaluations.</p>
+      <pre><code>
+if (possible("NaOH + HCl -> NaCl + H2O")) {
+  show("Valid reaction");
+} else {
+  show("Invalid reaction");
+}
+      </code></pre>
+    </div>
+
+    <!-- String Concatenation -->
+    <div class="doc-section">
+      <h4><code>+</code> (String Concatenation)</h4>
+      <p>Joins two strings or variables together.</p>
+      <pre><code>
+let base = "C6H6";
+show(base + " + O2 -> CO2 + H2O");
+      </code></pre>
+    </div>
+
+    <!-- Chemistry Functionality -->
+
+    <div class="doc-section">
+      <h4><code>resolve(expression, outputType?)</code></h4>
+      <p>Balances a chemical equation.</p>
+      <pre><code>show(resolve("Fe + O2 -> Fe2O3"));</code></pre>
+    </div>
+
+    <div class="doc-section">
+      <h4><code>possible(expression)</code></h4>
+      <p>Returns <code>true</code> if the reaction is chemically feasible.</p>
+      <pre><code>show(possible("NaOH + HCl -> NaCl + H2O"));</code></pre>
+    </div>
+
+    <div class="doc-section">
+      <h4><code>getOxidixngs(expression)</code></h4>
+      <p>Extracts oxidizing agents from the reactants of a given reaction.</p>
+      <pre><code>show(getOxidixngs("H2 + Cl2 -> HCl"));</code></pre>
+    </div>
+
+    <div class="doc-section">
+      <h4><code>getReducings(expression)</code></h4>
+      <p>Extracts reducing agents from the reactants of a given reaction.</p>
+      <pre><code>show(getReducings("Fe + CuSO4 -> FeSO4 + Cu"));</code></pre>
+    </div>
+
+    <div class="doc-section">
+      <h4><code>getMolecWeight(formula, includeIsotopes?)</code></h4>
+      <p>Calculates molecular weight of a compound.</p>
+      <pre><code>show(getMolecWeight("H2O"));</code></pre>
+    </div>
+
+    <div class="doc-section">
+      <h4><code>getVolume(moles, "custom"?, temperature?, pressure?)</code></h4>
+      <p>Calculates volume of a gas using the ideal gas law. Use "custom" to provide conditions.</p>
+      <pre><code>show(getVolume(1, "custom", 273.15, 101.325));</code></pre>
+    </div>
+
+    <div class="doc-section">
+      <h4><code>getVolume(mass, density)</code></h4>
+      <p>Computes volume using mass and density.</p>
+      <pre><code>show(getVolume(10, 2));</code></pre>
+    </div>
+
+    <div class="doc-section">
+      <h4><code>getV(volume, mass)</code></h4>
+      <p>Computes specific volume using total volume and molecular mass.</p>
+      <pre><code>show(getV(22.414, 18.015));</code></pre>
+    </div>
+
+    <div class="doc-section">
+      <h4><code>isAcid(formula)</code></h4>
+      <p>Returns <code>true</code> if the given formula is an acid.</p>
+      <pre><code>show(isAcid("HCl"));</code></pre>
+    </div>
+
+    <div class="doc-section">
+      <h4><code>isBase(formula)</code></h4>
+      <p>Returns <code>true</code> if the given formula is a base.</p>
+      <pre><code>show(isBase("NaOH"));</code></pre>
+    </div>
+
+    <div class="doc-section">
+      <h4><code>visualise(formula)</code></h4>
+      <p>Displays a 2D visual representation of a molecule or compound.</p>
+      <pre><code>visualise("C6H6");</code></pre>
+    </div>
+  `;
 };
  
 document.querySelector(".close-button").onclick = function () {
