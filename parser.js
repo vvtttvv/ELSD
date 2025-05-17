@@ -150,7 +150,7 @@ export default class Parser{
         node.left = null;
         node.right = null;
         if (["resolve", "possible", "getOxidixngs", "getReducings", "show", 
-            "getMolecWeight", "getVolume", "getV", "isAcid", "isBase"].includes(this.tokens[start].value)){
+            "getMolecWeight", "getVolume", "getV", "isAcid", "isBase", "visualize"].includes(this.tokens[start].value)){
            this.generalHandler(start, end, start, node);
         }
 
@@ -237,7 +237,7 @@ export default class Parser{
         if(this.tokens[key].type === "IDENTIFIER_TOKEN"){
             this.assignHandler(start, end, key);
         } else if (["resolve", "possible", "getOxidixngs", "getReducings", "show", 
-            "getMolecWeight", "getVolume", "getV", "isAcid", "isBase"].includes(this.tokens[key].value)){
+            "getMolecWeight", "getVolume", "getV", "isAcid", "isBase", "visualize"].includes(this.tokens[key].value)){
            this.generalHandler(start, end, key);
            return;
        } else {
