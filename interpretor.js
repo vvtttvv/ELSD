@@ -280,23 +280,6 @@ export default class Interpretor {
     return hasOxidizer && hasReducer;
   }  
   
-  // isReactionPossible(reactionString) {
-  //   if (!this.reactionAnalyzer) {
-  //     this.reactionAnalyzer = new ReactionAnalyzer();
-  //   }
-    
-  //   const result = this.reactionAnalyzer.isPossible(reactionString, {
-  //     concentratedAcid: reactionString.includes("conc") || reactionString.includes("concentrated")
-  //   });
-    
-  //   if (result) {
-  //     this.outputCallback(`The reaction "${reactionString}" is chemically possible.`);
-  //   } else {
-  //     this.outputCallback(`The reaction "${reactionString}" is not chemically possible.`);
-  //   }
-    
-  //   return result;
-  // }
 
   isReactionPossible(reactionString) {
     if (!this.reactionAnalyzer) {
@@ -312,6 +295,7 @@ export default class Interpretor {
   
     return result;
   }  
+
 
   resolveReaction(reactionString) {
     if (!this.reactionAnalyzer) {
@@ -341,29 +325,202 @@ export default class Interpretor {
     }, 0);
   }
 
-  visualize(formula) {
-    console.log("Visualizing:", formula);
-    function visualizaer(formula) {
-      initRDKitModule().then(RDKit => {
-        const mol = RDKit.get_mol("c1ccccc1");
-        const molBlock = mol.get_molblock();
-        console.log(molBlock); 
-        const kekuleMol = Kekule.IO.loadFormatData(molBlock, 'mol');
-        var parentElem = document.getElementById('visualize');
-        Kekule.DomUtils.clearChildContent(parentElem);
-        var drawBridgeManager = Kekule.Render.DrawBridge2DMananger;
-        var drawBridge = drawBridgeManager.getPreferredBridgeInstance();
-        var dim = Kekule.HtmlElementUtils.getElemOffsetDimension(parentElem); 
-        var context = drawBridge.createContext(parentElem, dim.width, dim.height);  
-        var rendererClass = Kekule.Render.get2DRendererClass(kekuleMol);
-        var renderer = new rendererClass(kekuleMol, drawBridge);  // create concrete renderer object and bind it with mol and draw bridge
-        var configObj = Kekule.Render.Render2DConfigs.getInstance();
-        var options = Kekule.Render.RenderOptionUtils.convertConfigsToPlainHash(configObj); 
-        renderer.draw(context, {'x': dim.width / 2, 'y': dim.height / 2}, options);
-      });
-    }
-    return visualizaer(formula);
+  visualize(input) {
+  if (!input || typeof input !== "string") {
+    this.outputCallback("visualize() expects a valid molecule string (e.g., 'C6H6').");
+    return;
   }
+
+  this.outputCallback("Visualizing formula: " + input);
+  
+  // Try multiple chemistry APIs to convert input to SMILES
+  this.tryMultipleAPIs(input)
+    .then(smiles => {
+      if (smiles) {
+        this.outputCallback("Chemistry API returned SMILES: " + smiles);
+        this.renderMolecule(smiles);
+      } else {
+        this.outputCallback(`Could not convert "${input}" to a valid molecular structure.`);
+        this.outputCallback("Please try a different notation or a common chemical name.");
+      }
+    });
+}
+
+// Try multiple APIs in sequence
+async tryMultipleAPIs(input) {
+  // Try PubChem first (best for formulas)
+  try {
+    const pubchemResult = await this.tryPubChemAPI(input);
+    if (pubchemResult) {
+      return pubchemResult;
+    }
+  } catch (error) {
+    this.outputCallback(`PubChem API error: ${error.message}`);
+  }
+  
+  // Then try CIR API
+  try {
+    const cirResult = await this.tryCIRApi(input);
+    if (cirResult) {
+      return cirResult;
+    }
+  } catch (error) {
+    this.outputCallback(`CIR API error: ${error.message}`);
+  }
+  
+  return null; // Both APIs failed
+}
+
+async tryPubChemAPI(input) {
+  this.outputCallback("Querying PubChem API...");
+
+  // Optional prefix support
+  if (input.startsWith("formula:")) {
+    input = input.replace("formula:", "").trim();
+  }
+
+  const formulaPattern = /^([A-Z][a-z]?\d*)+$/;
+  const isFormula = formulaPattern.test(input);
+
+  try {
+    const url = isFormula
+      ? `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/formula/${encodeURIComponent(input)}/property/CanonicalSMILES,IsomericSMILES,IUPACName/JSON`
+      : `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(input)}/property/CanonicalSMILES,IsomericSMILES,IUPACName/JSON`;
+
+    const response = await fetch(url);
+    if (response.ok) {
+      const data = await response.json();
+      const props = data?.PropertyTable?.Properties;
+      if (props && props.length > 0) {
+        const first = props[0];
+        const smiles = first.CanonicalSMILES || first.IsomericSMILES;
+        const name = first.IUPACName;
+
+        if (name) this.outputCallback(`IUPAC Name: ${name}`);
+        this.outputCallback(`PubChem returned SMILES: ${smiles}`);
+        return smiles;
+      }
+    }
+
+    this.outputCallback("PubChem did not return valid results.");
+    return null;
+
+  } catch (error) {
+    this.outputCallback(`PubChem API error: ${error.message}`);
+    return null;
+  }
+}
+
+
+async tryCIRApi(input) {
+  try {
+    this.outputCallback("Trying CIR API with input: " + input);
+    this.outputCallback("Connecting to Chemical Identifier Resolver online database...");
+    
+    const response = await fetch(`https://cactus.nci.nih.gov/chemical/structure/${encodeURIComponent(input)}/smiles`);
+    if (response.ok) {
+      const smiles = await response.text();
+      this.outputCallback("Found molecule in online chemical database.");
+      this.outputCallback("CIR API returned SMILES: " + smiles);
+      return smiles;
+    }
+    this.outputCallback(`CIR API could not resolve: ${input}`);
+    return null;
+  } catch (error) {
+    this.outputCallback(`CIR API error: ${error.message}`);
+    return null;
+  }
+}
+
+renderMolecule(smiles) {
+  if (!smiles) {
+    this.outputCallback("No valid SMILES to render.");
+    return;
+  }
+  
+  this.outputCallback("Rendering SMILES: " + smiles);
+  
+  initRDKitModule().then(RDKit => {
+    try {
+      this.outputCallback("Creating molecule from SMILES...");
+      const mol = RDKit.get_mol(smiles);
+      
+      if (!mol) {
+        this.outputCallback("RDKit failed to create molecule.");
+        return;
+      }
+      
+      // Check molecule validity and get atom count
+      try {
+        const atomCount = mol.get_num_atoms();
+        this.outputCallback(`Molecule created successfully with ${atomCount} atoms`);
+      } catch (e) {
+        this.outputCallback("Failed to get atom count: " + e.message);
+      }
+      
+      const molBlock = mol.get_molblock();
+      this.outputCallback("MolBlock created successfully");
+      
+      try {
+        this.outputCallback("Loading into Kekule.js...");
+        const kekuleMol = Kekule.IO.loadFormatData(molBlock, 'mol');
+        const parentElem = document.getElementById('visualize');
+        
+        // Clear the element and ensure it's visible
+        Kekule.DomUtils.clearChildContent(parentElem);
+        this.outputCallback("Cleared visualization area");
+        
+        // for the visualization area
+        parentElem.style.height = '300px';
+        parentElem.style.width = '500px';
+        parentElem.style.border = '5px solid red';
+        parentElem.style.backgroundColor = 'white';
+        parentElem.style.margin = '20px auto';
+        parentElem.style.display = 'block';
+        parentElem.style.position = 'relative';
+        parentElem.style.zIndex = '1000'; 
+        this.outputCallback("Set visualization area styles");
+        
+        this.outputCallback("Creating drawing context...");
+        const drawBridgeManager = Kekule.Render.DrawBridge2DMananger;
+        const drawBridge = drawBridgeManager.getPreferredBridgeInstance();
+        
+        const context = drawBridge.createContext(parentElem, 500, 300);
+        
+        try {
+          drawBridge.drawRect(context, 100, 100, 300, 100, {strokeColor: '#FF0000', fillColor: '#FFCCCC'});
+          this.outputCallback("Drew test rectangle - if you can't see it, rendering context has issues");
+        } catch(e) {
+          this.outputCallback("Failed to draw test shape: " + e.message);
+        }
+        
+        this.outputCallback("Creating renderer...");
+        const rendererClass = Kekule.Render.get2DRendererClass(kekuleMol);
+        const renderer = new rendererClass(kekuleMol, drawBridge);
+        const configObj = Kekule.Render.Render2DConfigs.getInstance();
+        const options = Kekule.Render.RenderOptionUtils.convertConfigsToPlainHash(configObj);
+        
+        this.outputCallback("Drawing molecule...");
+        renderer.draw(context, {x: 250, y: 150}, options);
+        
+        this.outputCallback(`Visualization complete. SMILES: ${smiles}`);
+        
+        const statusDiv = document.createElement('div');
+        statusDiv.textContent = "Visualization attempt complete - check area below";
+        statusDiv.style.color = "blue";
+        statusDiv.style.fontWeight = "bold";
+        document.getElementById('output').appendChild(statusDiv);
+        
+      } catch (e) {
+        this.outputCallback(`Error in Kekule rendering: ${e.message}`);
+      }
+    } catch (e) {
+      this.outputCallback(`Error creating molecule: ${e.message}`);
+    }
+  }).catch(err => {
+    this.outputCallback(`RDKit initialization error: ${err.message}`);
+  });
+}
 
   getVolume(mass, density) {
     return mass / density;

@@ -103,27 +103,58 @@ window.onclick = function (event) {
 };
 
 
-window.addEventListener('load', () => {
-    initRDKitModule().then(RDKit => {
-      const mol = RDKit.get_mol("c1ccc(CC)cc1");
-      const molBlock = mol.get_molblock();
-      console.log(molBlock); 
-      const kekuleMol = Kekule.IO.loadFormatData(molBlock, 'mol');
-      var parentElem = document.getElementById('visualize');
-      Kekule.DomUtils.clearChildContent(parentElem);
-      var drawBridgeManager = Kekule.Render.DrawBridge2DMananger;
-      var drawBridge = drawBridgeManager.getPreferredBridgeInstance();
-      var dim = Kekule.HtmlElementUtils.getElemOffsetDimension(parentElem); 
-      var context = drawBridge.createContext(parentElem, dim.width, dim.height);  
-      var rendererClass = Kekule.Render.get2DRendererClass(kekuleMol);
-      var renderer = new rendererClass(kekuleMol, drawBridge);  // create concrete renderer object and bind it with mol and draw bridge
-      var configObj = Kekule.Render.Render2DConfigs.getInstance();
-      var options = Kekule.Render.RenderOptionUtils.convertConfigsToPlainHash(configObj); 
-      renderer.draw(context, {'x': dim.width / 2, 'y': dim.height / 2}, options);
-  });
+// window.addEventListener('load', () => {
+//     initRDKitModule().then(RDKit => {
+//       const mol = RDKit.get_mol("c1ccc(CC)cc1");
+//       const molBlock = mol.get_molblock();
+//       console.log(molBlock); 
+//       const kekuleMol = Kekule.IO.loadFormatData(molBlock, 'mol');
+//       var parentElem = document.getElementById('visualize');
+//       Kekule.DomUtils.clearChildContent(parentElem);
+//       var drawBridgeManager = Kekule.Render.DrawBridge2DMananger;
+//       var drawBridge = drawBridgeManager.getPreferredBridgeInstance();
+//       var dim = Kekule.HtmlElementUtils.getElemOffsetDimension(parentElem); 
+//       var context = drawBridge.createContext(parentElem, dim.width, dim.height);  
+//       var rendererClass = Kekule.Render.get2DRendererClass(kekuleMol);
+//       var renderer = new rendererClass(kekuleMol, drawBridge);  // create concrete renderer object and bind it with mol and draw bridge
+//       var configObj = Kekule.Render.Render2DConfigs.getInstance();
+//       var options = Kekule.Render.RenderOptionUtils.convertConfigsToPlainHash(configObj); 
+//       renderer.draw(context, {'x': dim.width / 2, 'y': dim.height / 2}, options);
+//   });
 
-    });
+//     });
  
+
+window.addEventListener('load', () => {
+  const outputCallback = (message) => {
+    const outputElement = document.createElement("div");
+    outputElement.textContent = message;
+    document.getElementById("output").appendChild(outputElement);
+  };
+  
+  // Test if OpenChemLib is available
+  if (typeof OCL === 'undefined') {
+    outputCallback("WARNING: OpenChemLib not loaded!");
+  } else {
+    outputCallback("OpenChemLib loaded successfully");
+  }
+  
+  // Set up the visualization area
+  const visualizeElem = document.getElementById('visualize');
+  visualizeElem.style.height = '300px';
+  visualizeElem.style.width = '500px';
+  visualizeElem.style.border = '1px solid #ccc';
+  visualizeElem.style.backgroundColor = 'white';
+  visualizeElem.style.margin = '20px auto';
+  visualizeElem.style.display = 'block';
+  
+  // Initialize RDKit but don't render anything yet
+  initRDKitModule().then(RDKit => {
+    outputCallback("RDKit initialized successfully");
+  }).catch(err => {
+    outputCallback("Error initializing RDKit: " + err.message);
+  });
+});
 
 /*
 let variable = "C6H6";
