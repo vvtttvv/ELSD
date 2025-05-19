@@ -344,7 +344,7 @@ export default class Interpretor {
         this.outputCallback("Please try a different notation or a common chemical name.");
       }
     });
-}
+  }
 
 // Try multiple APIs in sequence
 async tryMultipleAPIs(input) {
@@ -374,42 +374,80 @@ async tryMultipleAPIs(input) {
 async tryPubChemAPI(input) {
   this.outputCallback("Querying PubChem API...");
 
-  // Optional prefix support
-  if (input.startsWith("formula:")) {
-    input = input.replace("formula:", "").trim();
-  }
-
-  const formulaPattern = /^([A-Z][a-z]?\d*)+$/;
-  const isFormula = formulaPattern.test(input);
+  const isFormula = /^([A-Z][a-z]?\d*)+$/.test(input.trim());
 
   try {
-    const url = isFormula
-      ? `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/formula/${encodeURIComponent(input)}/property/CanonicalSMILES,IsomericSMILES,IUPACName/JSON`
-      : `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(input)}/property/CanonicalSMILES,IsomericSMILES,IUPACName/JSON`;
+    let cid = null;
 
-    const response = await fetch(url);
-    if (response.ok) {
-      const data = await response.json();
-      const props = data?.PropertyTable?.Properties;
-      if (props && props.length > 0) {
-        const first = props[0];
-        const smiles = first.CanonicalSMILES || first.IsomericSMILES;
-        const name = first.IUPACName;
+    if (isFormula) {
+      const formulaUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/formula/${encodeURIComponent(input)}/cids/JSON`;
+      const formulaResp = await fetch(formulaUrl);
+      const formulaData = await formulaResp.json();
 
-        if (name) this.outputCallback(`IUPAC Name: ${name}`);
-        this.outputCallback(`PubChem returned SMILES: ${smiles}`);
-        return smiles;
+      if (formulaData?.Waiting?.ListKey) {
+        const listKey = formulaData.Waiting.ListKey;
+        this.outputCallback(`Waiting for PubChem response. ListKey: ${listKey}`);
+        cid = await this.pollForCID(listKey);
+      } else {
+        const cidList = formulaData?.IdentifierList?.CID;
+        if (!cidList || cidList.length === 0) {
+          this.outputCallback("No CIDs found for formula.");
+          return null;
+        }
+        cid = cidList[0];
+      }
+    } else {
+      const nameUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(input)}/cids/JSON`;
+      const nameResp = await fetch(nameUrl);
+      const nameData = await nameResp.json();
+      cid = nameData?.IdentifierList?.CID?.[0];
+      if (!cid) {
+        this.outputCallback("No CID found for compound name.");
+        return null;
       }
     }
 
-    this.outputCallback("PubChem did not return valid results.");
-    return null;
+    const propUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/CanonicalSMILES,IUPACName/JSON`;
+    const propResp = await fetch(propUrl);
+    const propData = await propResp.json();
+    const props = propData?.PropertyTable?.Properties?.[0];
+
+    if (!props || !props.CanonicalSMILES) {
+      this.outputCallback("No SMILES found for CID.");
+      return null;
+    }
+
+    this.outputCallback(`IUPAC Name: ${props.IUPACName}`);
+    this.outputCallback(`PubChem returned SMILES: ${props.CanonicalSMILES}`);
+    return props.CanonicalSMILES;
 
   } catch (error) {
     this.outputCallback(`PubChem API error: ${error.message}`);
     return null;
   }
 }
+
+async pollForCID(listKey, retries = 10, delay = 1000) {
+  const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/listkey/${listKey}/cids/JSON`;
+
+  for (let i = 0; i < retries; i++) {
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    if (data.IdentifierList?.CID?.length > 0) {
+      return data.IdentifierList.CID[0];
+    }
+
+    if (data.Waiting) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+    } else {
+      break;
+    }
+  }
+
+  throw new Error("PubChem async request timed out or failed.");
+}
+
 
 
 async tryCIRApi(input) {
@@ -450,7 +488,6 @@ renderMolecule(smiles) {
         return;
       }
       
-      // Check molecule validity and get atom count
       try {
         const atomCount = mol.get_num_atoms();
         this.outputCallback(`Molecule created successfully with ${atomCount} atoms`);
@@ -466,7 +503,6 @@ renderMolecule(smiles) {
         const kekuleMol = Kekule.IO.loadFormatData(molBlock, 'mol');
         const parentElem = document.getElementById('visualize');
         
-        // Clear the element and ensure it's visible
         Kekule.DomUtils.clearChildContent(parentElem);
         this.outputCallback("Cleared visualization area");
         
