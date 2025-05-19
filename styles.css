@@ -21,10 +21,12 @@
 
 .wrapper{
     background-color: #b9ebffbf;
+    min-height: 100vh;
+    height: auto;
+    padding-bottom: 10px;
 }
 
-.main_part{
-    padding-bottom: 40px;
+.main_part{ 
     display: flex;
 }
 
@@ -124,10 +126,26 @@ button:hover{
 
 
 
-#visualize {
-    width: 400px;
+#visualize_part{ 
+    width: 100%;
+    display: flex; 
+    justify-content: space-between;
+    padding-left: 4%;
+    padding-right: 10%;
+}
+
+#visualize3d{
+    width: 600px;
+    border-radius: 50px;
     height: 300px;
     border: 1px solid #ccc;
-    background-color: #ffffff;
-    margin: auto;
+    background-color: #ffffff; 
+}
+
+#visualize {
+    width: 600px;
+    border-radius: 50px;
+    height: 300px;
+    border: 1px solid #ccc;
+    background-color: #ffffff; 
 }

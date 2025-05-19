@@ -104,25 +104,34 @@ window.onclick = function (event) {
 
 
 window.addEventListener('load', () => {
-    initRDKitModule().then(RDKit => {
-      const mol = RDKit.get_mol("c1ccc(CC)cc1");
-      const molBlock = mol.get_molblock();
-      console.log(molBlock); 
-      const kekuleMol = Kekule.IO.loadFormatData(molBlock, 'mol');
-      var parentElem = document.getElementById('visualize');
-      Kekule.DomUtils.clearChildContent(parentElem);
-      var drawBridgeManager = Kekule.Render.DrawBridge2DMananger;
-      var drawBridge = drawBridgeManager.getPreferredBridgeInstance();
-      var dim = Kekule.HtmlElementUtils.getElemOffsetDimension(parentElem); 
-      var context = drawBridge.createContext(parentElem, dim.width, dim.height);  
-      var rendererClass = Kekule.Render.get2DRendererClass(kekuleMol);
-      var renderer = new rendererClass(kekuleMol, drawBridge);  // create concrete renderer object and bind it with mol and draw bridge
-      var configObj = Kekule.Render.Render2DConfigs.getInstance();
-      var options = Kekule.Render.RenderOptionUtils.convertConfigsToPlainHash(configObj); 
-      renderer.draw(context, {'x': dim.width / 2, 'y': dim.height / 2}, options);
-  });
+  initRDKitModule().then(RDKit => {
+    const mol = RDKit.get_mol("c1ccc(CC)cc1");
+    const molBlock = mol.get_molblock();
+    console.log(molBlock); 
+    const kekuleMol = Kekule.IO.loadFormatData(molBlock, 'mol');
+    var parentElem = document.getElementById('visualize');
+    Kekule.DomUtils.clearChildContent(parentElem);
+    var drawBridgeManager = Kekule.Render.DrawBridge2DMananger;
+    var drawBridge = drawBridgeManager.getPreferredBridgeInstance();
+    var dim = Kekule.HtmlElementUtils.getElemOffsetDimension(parentElem); 
+    var context = drawBridge.createContext(parentElem, dim.width, dim.height);  
+    var rendererClass = Kekule.Render.get2DRendererClass(kekuleMol);
+    var renderer = new rendererClass(kekuleMol, drawBridge);  // create concrete renderer object and bind it with mol and draw bridge
+    var configObj = Kekule.Render.Render2DConfigs.getInstance();
+    var options = Kekule.Render.RenderOptionUtils.convertConfigsToPlainHash(configObj); 
+    renderer.draw(context, {'x': dim.width / 2, 'y': dim.height / 2}, options);
 
-    });
+    
+    var parentElem3d = document.getElementById('visualize3d');
+    Kekule.DomUtils.clearChildContent(parentElem3d);
+    var viewer3d = new Kekule.ChemWidget.Viewer(parentElem3d);
+    viewer3d.setRenderType(Kekule.Render.RendererType.R3D);  // Use 3D render
+    viewer3d.setChemObj(kekuleMol);  // Assign molecule
+    viewer3d.setEnableToolbar(true);  // Optional UI toolbar
+    viewer3d.setPredefinedSetting('ballStick');  // ballStick, stick, spaceFill etc.
+
+  });
+});
  
 
 /*
