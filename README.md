@@ -125,7 +125,7 @@ Returns `true` if the compound is basic.
 **Output:** `true`
 
 ## Visualize formula
-Displays a 2D graphical representation of a chemical formula or molecule **It's preferable to use the name of the formula e.g. "benzene" it is more accurate and gives faster results**.  
+Displays a 2D and 3D graphical representation of a chemical formula or molecule **It's preferable to use the name of the formula e.g. "benzene" it is more accurate and gives faster results**.  
 **Input:** `visualize("C6H6")`  |   `visualize("benzene")`
 **Output:** 
-![alt text](/images/image.png)
+![alt text](/images/image.png) 

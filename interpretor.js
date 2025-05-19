@@ -541,48 +541,24 @@ export default class Interpretor {
 
             Kekule.DomUtils.clearChildContent(parentElem);
             this.outputCallback("Cleared visualization area");
-
-            // for the visualization area
-            parentElem.style.height = "300px";
-            parentElem.style.width = "500px";
-            parentElem.style.border = "5px solid red";
-            parentElem.style.backgroundColor = "white";
-            parentElem.style.margin = "20px auto";
-            parentElem.style.display = "block";
-            parentElem.style.zIndex = "1000";
+ 
             this.outputCallback("Set visualization area styles");
 
-            this.outputCallback("Creating drawing context...");
-            const drawBridgeManager = Kekule.Render.DrawBridge2DMananger;
-            const drawBridge = drawBridgeManager.getPreferredBridgeInstance();
+            this.outputCallback("Creating Viewer...");
+            const viewer2d = new Kekule.ChemWidget.Viewer(parentElem);
+            viewer2d.setChemObj(kekuleMol);
+            viewer2d.setRenderType(Kekule.Render.RendererType.R2D);  
+            viewer2d.setPredefinedSetting('fullFunc');
+            viewer2d.setMoleculeDisplayType(Kekule.Render.Molecule2DDisplayType.ATOM_SYMBOL); 
+            var color2DConfigs = viewer2d.getRenderConfigs().getColorConfigs();
+            color2DConfigs.setAtomColor('#A00000').setBondColor('#000000');  // set the default color for atoms and bonds
+            color2DConfigs.setGlyphStrokeColor('#C0C0C0');  
+            color2DConfigs.setLabelColor('#C0C0C0'); 
 
-            const context = drawBridge.createContext(parentElem, 500, 300);
-
-            try {
-              drawBridge.drawRect(context, 100, 100, 300, 500, {
-                strokeColor: "#FF0000",
-                fillColor: "#FFCCCC",
-              });
-              this.outputCallback(
-                "Drew test rectangle - if you can't see it, rendering context has issues"
-              );
-            } catch (e) {
-              this.outputCallback("Failed to draw test shape: " + e.message);
-            }
-
-            this.outputCallback("Creating renderer...");
-            const rendererClass = Kekule.Render.get2DRendererClass(kekuleMol);
-            const renderer = new rendererClass(kekuleMol, drawBridge);
-            const configObj = Kekule.Render.Render2DConfigs.getInstance();
-            const options =
-              Kekule.Render.RenderOptionUtils.convertConfigsToPlainHash(
-                configObj
-              );
-            options.zoom = 3.0;
-
-            this.outputCallback("Drawing molecule...");
-            renderer.draw(context, { x: 250, y: 150 }, options);
-
+            viewer2d.setEnableToolbar(true);  
+            
+            viewer2d.repaint();
+ 
             this.outputCallback(`Visualization complete. SMILES: ${smiles}`);
 
             const statusDiv = document.createElement("div");
@@ -591,6 +567,18 @@ export default class Interpretor {
             statusDiv.style.color = "blue";
             statusDiv.style.fontWeight = "bold";
             document.getElementById("output").appendChild(statusDiv);
+
+            var parentElem3d = document.getElementById('visualize3d');
+            Kekule.DomUtils.clearChildContent(parentElem3d);
+            var viewer3d = new Kekule.ChemWidget.Viewer(parentElem3d);
+            viewer3d.setRenderType(Kekule.Render.RendererType.R3D);  // Use 3D render
+            viewer3d.setChemObj(kekuleMol);  // Assign molecule
+            viewer3d.setEnableToolbar(true);  // Optional UI toolbar
+            viewer3d.setPredefinedSetting('ballStick');   
+            var display3DConfigs = viewer3d.getRenderConfigs().getMoleculeDisplayConfigs();
+            display3DConfigs.setDefAtomColor('#FFFFFF').setDefBondColor('#A0A000');
+            display3DConfigs.setUseAtomSpecifiedColor(false);  // turn off this to take the color to effect
+            viewer3d.requestRepaint();   
           } catch (e) {
             this.outputCallback(`Error in Kekule rendering: ${e.message}`);
           }

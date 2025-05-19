@@ -199,31 +199,44 @@ window.onclick = function (event) {
   }
 };
 
-
-// window.addEventListener('load', () => {
-//     initRDKitModule().then(RDKit => {
-//       const mol = RDKit.get_mol("c1ccc(CC)cc1");
-//       const molBlock = mol.get_molblock();
-//       console.log(molBlock); 
-//       const kekuleMol = Kekule.IO.loadFormatData(molBlock, 'mol');
-//       var parentElem = document.getElementById('visualize');
-//       Kekule.DomUtils.clearChildContent(parentElem);
-//       var drawBridgeManager = Kekule.Render.DrawBridge2DMananger;
-//       var drawBridge = drawBridgeManager.getPreferredBridgeInstance();
-//       var dim = Kekule.HtmlElementUtils.getElemOffsetDimension(parentElem); 
-//       var context = drawBridge.createContext(parentElem, dim.width, dim.height);  
-//       var rendererClass = Kekule.Render.get2DRendererClass(kekuleMol);
-//       var renderer = new rendererClass(kekuleMol, drawBridge);  // create concrete renderer object and bind it with mol and draw bridge
-//       var configObj = Kekule.Render.Render2DConfigs.getInstance();
-//       var options = Kekule.Render.RenderOptionUtils.convertConfigsToPlainHash(configObj); 
-//       renderer.draw(context, {'x': dim.width / 2, 'y': dim.height / 2}, options);
-//   });
-
-//     });
  
-
 window.addEventListener('load', () => {
-  const outputCallback = (message) => {
+  initRDKitModule().then(RDKit => {
+    const mol = RDKit.get_mol("c1ccc(CC)cc1");
+    const molBlock = mol.get_molblock();
+    const kekuleMol = Kekule.IO.loadFormatData(molBlock, 'mol');
+
+    const parentElem = document.getElementById('visualize');
+    Kekule.DomUtils.clearChildContent(parentElem);
+
+    const viewer2d = new Kekule.ChemWidget.Viewer(parentElem);
+    viewer2d.setChemObj(kekuleMol);
+    viewer2d.setRenderType(Kekule.Render.RendererType.R2D);  
+    viewer2d.setPredefinedSetting('fullFunc');
+    viewer2d.setMoleculeDisplayType(Kekule.Render.Molecule2DDisplayType.ATOM_SYMBOL); 
+    var color2DConfigs = viewer2d.getRenderConfigs().getColorConfigs();
+    color2DConfigs.setAtomColor('#A00000').setBondColor('#000000');  // set the default color for atoms and bonds
+    color2DConfigs.setGlyphStrokeColor('#C0C0C0');  
+    color2DConfigs.setLabelColor('#C0C0C0'); 
+
+    viewer2d.setEnableToolbar(true);  
+    
+    viewer2d.repaint();
+
+    var parentElem3d = document.getElementById('visualize3d');
+    Kekule.DomUtils.clearChildContent(parentElem3d);
+    var viewer3d = new Kekule.ChemWidget.Viewer(parentElem3d);
+    viewer3d.setRenderType(Kekule.Render.RendererType.R3D);  // Use 3D render
+    viewer3d.setChemObj(kekuleMol);  // Assign molecule
+    viewer3d.setEnableToolbar(true);  // Optional UI toolbar
+    viewer3d.setPredefinedSetting('ballStick');   
+    var display3DConfigs = viewer3d.getRenderConfigs().getMoleculeDisplayConfigs();
+    display3DConfigs.setDefAtomColor('#FFFFFF').setDefBondColor('#A0A000');
+    display3DConfigs.setUseAtomSpecifiedColor(false);  // turn off this to take the color to effect
+    viewer3d.requestRepaint();    
+
+
+    const outputCallback = (message) => {
     const outputElement = document.createElement("div");
     outputElement.textContent = message;
     document.getElementById("output").appendChild(outputElement);
@@ -235,15 +248,7 @@ window.addEventListener('load', () => {
   } else {
     outputCallback("OpenChemLib loaded successfully");
   }
-  
-  // Set up the visualization area
-  const visualizeElem = document.getElementById('visualize');
-  visualizeElem.style.height = '300px';
-  visualizeElem.style.width = '500px';
-  visualizeElem.style.border = '1px solid #ccc';
-  visualizeElem.style.backgroundColor = 'white';
-  visualizeElem.style.margin = '20px auto';
-  visualizeElem.style.display = 'block';
+   
   
   // Initialize RDKit but don't render anything yet
   initRDKitModule().then(RDKit => {
@@ -251,7 +256,9 @@ window.addEventListener('load', () => {
   }).catch(err => {
     outputCallback("Error initializing RDKit: " + err.message);
   });
-});
+  });
+});  
+ 
 
 /*
 let variable = "C6H6";
