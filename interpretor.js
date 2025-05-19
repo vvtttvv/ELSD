@@ -512,8 +512,7 @@ renderMolecule(smiles) {
         parentElem.style.border = '5px solid red';
         parentElem.style.backgroundColor = 'white';
         parentElem.style.margin = '20px auto';
-        parentElem.style.display = 'block';
-        parentElem.style.position = 'relative';
+        parentElem.style.display = 'block'; 
         parentElem.style.zIndex = '1000'; 
         this.outputCallback("Set visualization area styles");
         
@@ -524,7 +523,7 @@ renderMolecule(smiles) {
         const context = drawBridge.createContext(parentElem, 500, 300);
         
         try {
-          drawBridge.drawRect(context, 100, 100, 300, 100, {strokeColor: '#FF0000', fillColor: '#FFCCCC'});
+          drawBridge.drawRect(context, 100, 100, 300, 500, {strokeColor: '#FF0000', fillColor: '#FFCCCC'});
           this.outputCallback("Drew test rectangle - if you can't see it, rendering context has issues");
         } catch(e) {
           this.outputCallback("Failed to draw test shape: " + e.message);
@@ -535,6 +534,7 @@ renderMolecule(smiles) {
         const renderer = new rendererClass(kekuleMol, drawBridge);
         const configObj = Kekule.Render.Render2DConfigs.getInstance();
         const options = Kekule.Render.RenderOptionUtils.convertConfigsToPlainHash(configObj);
+        options.zoom = 3.0;
         
         this.outputCallback("Drawing molecule...");
         renderer.draw(context, {x: 250, y: 150}, options);
