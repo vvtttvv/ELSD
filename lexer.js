@@ -94,9 +94,20 @@ export default class Lexer {
   
     tokenizeNumber() {
       let start = this.position;
-      while (!this.isAtEnd() && this.isDigit(this.peek())) {
-        this.advance();
+      let hasDot = false;
+
+      while (!this.isAtEnd()) {
+        const ch = this.peek();
+        if (this.isDigit(ch)) {
+          this.advance();
+        } else if (ch === '.' && !hasDot) {
+          hasDot = true;
+          this.advance();
+        } else {
+          break;
+        }
       }
+
       const text = this.input.substring(start, this.position);
       this.tokens.push({ type: "NUMBER_TOKEN", value: text });
     }

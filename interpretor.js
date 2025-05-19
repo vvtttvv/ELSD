@@ -1,11 +1,15 @@
-import { periodicTable } from './chemistryData/core/periodicTable.js';
-import { hydrocarbonWeights } from './chemistryData/compounds/hydrocarbons/hydrocarbons.js';
-import { oxidizingAgents, reducingAgents, validCombustionFuels } from './chemistryData/reactions/redoxAgents.js';
-import { physicalConstants } from './chemistryData/core/constants.js';
-import { solubilityTable } from './chemistryData/core/solubilityTable.js';
-import { extractIons } from './chemistryData/core/extractIons.js';
-import { ReactionAnalyzer } from './chemistryData/reactionAnalyzer.js';
-import { balanceEquation } from './chemistryData/equationBalancer.js';
+import { periodicTable } from "./chemistryData/core/periodicTable.js";
+import { hydrocarbonWeights } from "./chemistryData/compounds/hydrocarbons/hydrocarbons.js";
+import {
+  oxidizingAgents,
+  reducingAgents,
+  validCombustionFuels,
+} from "./chemistryData/reactions/redoxAgents.js";
+import { physicalConstants } from "./chemistryData/core/constants.js";
+import { solubilityTable } from "./chemistryData/core/solubilityTable.js";
+import { extractIons } from "./chemistryData/core/extractIons.js";
+import { ReactionAnalyzer } from "./chemistryData/reactionAnalyzer.js";
+import { balanceEquation } from "./chemistryData/equationBalancer.js";
 
 export default class Interpretor {
   constructor(parseTree, outputCallback) {
@@ -74,6 +78,12 @@ export default class Interpretor {
 
   evaluateNode(node) {
     if (!node) return;
+
+    if (node.type === "KEYWORD_TOKEN" && node.value === "visualize") {
+      const message = this.visualize(this.evaluateArguments(node.left)[0]);
+      this.outputCallback(message);
+      return;
+    }
 
     // If this node is an EXP node wrapping a let statement, unwrap it.
     let stmtNode = node;
@@ -230,24 +240,29 @@ export default class Interpretor {
   isElement(compound) {
     return /^[A-Z][a-z]?$/.test(compound.trim()); // Zn, O, Fe, etc.
   }
-  
+
   isCompound(compound) {
     return /[A-Z][a-z]?[0-9]?/.test(compound.trim()) && compound.length > 1;
   }
 
   // like Fe + CuSO4 = FeSO4 + Cu
   isSingleReplacementReaction(reactants, products) {
-    const reactantParts = reactants.split("+").map(s => s.trim());
-    const productParts = products.split("+").map(s => s.trim());
-  
+    const reactantParts = reactants.split("+").map((s) => s.trim());
+    const productParts = products.split("+").map((s) => s.trim());
+
     if (reactantParts.length === 2 && productParts.length === 2) {
-      const hasElement = reactantParts.some(r => this.isElement(r));
-      const hasCompound = reactantParts.some(r => this.isCompound(r));
-  
-      const productHasElement = productParts.some(p => this.isElement(p));
-      const productHasCompound = productParts.some(p => this.isCompound(p));
-  
-      if (hasElement && hasCompound && productHasElement && productHasCompound) {
+      const hasElement = reactantParts.some((r) => this.isElement(r));
+      const hasCompound = reactantParts.some((r) => this.isCompound(r));
+
+      const productHasElement = productParts.some((p) => this.isElement(p));
+      const productHasCompound = productParts.some((p) => this.isCompound(p));
+
+      if (
+        hasElement &&
+        hasCompound &&
+        productHasElement &&
+        productHasCompound
+      ) {
         return true;
       }
     }
@@ -255,48 +270,59 @@ export default class Interpretor {
   }
 
   isSynthesisOrDecomposition(reactants, products) {
-    const reactantParts = reactants.split("+").map(s => s.trim());
-    const productParts = products.split("+").map(s => s.trim());
-  
+    const reactantParts = reactants.split("+").map((s) => s.trim());
+    const productParts = products.split("+").map((s) => s.trim());
+
     // A + B → AB
     if (reactantParts.length >= 2 && productParts.length === 1) {
       return true;
     }
-  
+
     // AB → A + B
     if (reactantParts.length === 1 && productParts.length >= 2) {
       return true;
     }
-  
+
     return false;
   }
 
   isRedoxReaction(reactants) {
-    const reactantParts = reactants.split("+").map(s => s.trim());
-  
-    const hasOxidizer = reactantParts.some(r => oxidizingAgents.includes(r));
-    const hasReducer = reactantParts.some(r => reducingAgents.includes(r));
-  
+    const reactantParts = reactants.split("+").map((s) => s.trim());
+
+    const hasOxidizer = reactantParts.some((r) => oxidizingAgents.includes(r));
+    const hasReducer = reactantParts.some((r) => reducingAgents.includes(r));
+
     return hasOxidizer && hasReducer;
-  }  
-  
+  }
+
   isReactionPossible(reactionString) {
     if (!this.reactionAnalyzer) {
       this.reactionAnalyzer = new ReactionAnalyzer();
     }
-    
-    return this.reactionAnalyzer.isPossible(reactionString, {
-      concentratedAcid: reactionString.includes("conc") || reactionString.includes("concentrated")
+
+    const result = this.reactionAnalyzer.isPossible(reactionString, {
+      concentratedAcid:
+        reactionString.includes("conc") ||
+        reactionString.includes("concentrated"),
     });
+
+    const msg = `The reaction "${reactionString}" is ${
+      result ? "" : "not "
+    }chemically possible.`;
+    this.outputCallback(msg);
+
+    return result;
   }
 
   resolveReaction(reactionString) {
     if (!this.reactionAnalyzer) {
       // Pass parseFormula from Interpretor to ReactionAnalyzer
-      this.reactionAnalyzer = new ReactionAnalyzer(this.parseFormula.bind(this));
+      this.reactionAnalyzer = new ReactionAnalyzer(
+        this.parseFormula.bind(this)
+      );
     }
-      return balanceEquation(reactionString, this.parseFormula.bind(this));
-  }    
+    return balanceEquation(reactionString, this.parseFormula.bind(this));
+  }
 
   getOxidizingAgents(reactionString) {
     // Return only the oxidizing agents identified from the reaction string.
@@ -304,7 +330,7 @@ export default class Interpretor {
     return agents.oxidizing;
   }
 
-  getMolecularWeight(formula) { 
+  getMolecularWeight(formula) {
     // First, try a lookup for common hydrocarbons.
 
     if (hydrocarbonWeights[formula]) {
@@ -318,28 +344,251 @@ export default class Interpretor {
     }, 0);
   }
 
-  visualize(formula) {
-    console.log("Visualizing:", formula);
-    function visualizaer(formula) {
-      initRDKitModule().then(RDKit => {
-        const mol = RDKit.get_mol("c1ccccc1");
-        const molBlock = mol.get_molblock();
-        console.log(molBlock); 
-        const kekuleMol = Kekule.IO.loadFormatData(molBlock, 'mol');
-        var parentElem = document.getElementById('visualize');
-        Kekule.DomUtils.clearChildContent(parentElem);
-        var drawBridgeManager = Kekule.Render.DrawBridge2DMananger;
-        var drawBridge = drawBridgeManager.getPreferredBridgeInstance();
-        var dim = Kekule.HtmlElementUtils.getElemOffsetDimension(parentElem); 
-        var context = drawBridge.createContext(parentElem, dim.width, dim.height);  
-        var rendererClass = Kekule.Render.get2DRendererClass(kekuleMol);
-        var renderer = new rendererClass(kekuleMol, drawBridge);  // create concrete renderer object and bind it with mol and draw bridge
-        var configObj = Kekule.Render.Render2DConfigs.getInstance();
-        var options = Kekule.Render.RenderOptionUtils.convertConfigsToPlainHash(configObj); 
-        renderer.draw(context, {'x': dim.width / 2, 'y': dim.height / 2}, options);
-      });
+  visualize(input) {
+    if (!input || typeof input !== "string") {
+      this.outputCallback(
+        "visualize() expects a valid molecule string (e.g., 'C6H6')."
+      );
+      return;
     }
-    return visualizaer(formula);
+
+    this.outputCallback("Visualizing formula: " + input);
+
+    // Try multiple chemistry APIs to convert input to SMILES
+    this.tryMultipleAPIs(input).then((smiles) => {
+      if (smiles) {
+        this.outputCallback("Chemistry API returned SMILES: " + smiles);
+        this.renderMolecule(smiles);
+      } else {
+        this.outputCallback(
+          `Could not convert "${input}" to a valid molecular structure.`
+        );
+        this.outputCallback(
+          "Please try a different notation or a common chemical name."
+        );
+      }
+    });
+  }
+
+  // Try multiple APIs in sequence
+  async tryMultipleAPIs(input) {
+    // Try PubChem first (best for formulas)
+    try {
+      const pubchemResult = await this.tryPubChemAPI(input);
+      if (pubchemResult) {
+        return pubchemResult;
+      }
+    } catch (error) {
+      this.outputCallback(`PubChem API error: ${error.message}`);
+    }
+
+    // Then try CIR API
+    try {
+      const cirResult = await this.tryCIRApi(input);
+      if (cirResult) {
+        return cirResult;
+      }
+    } catch (error) {
+      this.outputCallback(`CIR API error: ${error.message}`);
+    }
+
+    return null; // Both APIs failed
+  }
+
+  async tryPubChemAPI(input) {
+    this.outputCallback("Querying PubChem API...");
+
+    const isFormula = /^([A-Z][a-z]?\d*)+$/.test(input.trim());
+
+    try {
+      let cid = null;
+
+      if (isFormula) {
+        const formulaUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/formula/${encodeURIComponent(
+          input
+        )}/cids/JSON`;
+        const formulaResp = await fetch(formulaUrl);
+        const formulaData = await formulaResp.json();
+
+        if (formulaData?.Waiting?.ListKey) {
+          const listKey = formulaData.Waiting.ListKey;
+          this.outputCallback(
+            `Waiting for PubChem response. ListKey: ${listKey}`
+          );
+          cid = await this.pollForCID(listKey);
+        } else {
+          const cidList = formulaData?.IdentifierList?.CID;
+          if (!cidList || cidList.length === 0) {
+            this.outputCallback("No CIDs found for formula.");
+            return null;
+          }
+          cid = cidList[0];
+        }
+      } else {
+        const nameUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(
+          input
+        )}/cids/JSON`;
+        const nameResp = await fetch(nameUrl);
+        const nameData = await nameResp.json();
+        cid = nameData?.IdentifierList?.CID?.[0];
+        if (!cid) {
+          this.outputCallback("No CID found for compound name.");
+          return null;
+        }
+      }
+
+      const propUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/CanonicalSMILES,IUPACName/JSON`;
+      const propResp = await fetch(propUrl);
+      const propData = await propResp.json();
+      const props = propData?.PropertyTable?.Properties?.[0];
+
+      if (!props || !props.CanonicalSMILES) {
+        this.outputCallback("No SMILES found for CID.");
+        return null;
+      }
+
+      this.outputCallback(`IUPAC Name: ${props.IUPACName}`);
+      this.outputCallback(`PubChem returned SMILES: ${props.CanonicalSMILES}`);
+      return props.CanonicalSMILES;
+    } catch (error) {
+      this.outputCallback(`PubChem API error: ${error.message}`);
+      return null;
+    }
+  }
+
+  async pollForCID(listKey, retries = 10, delay = 1000) {
+    const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/listkey/${listKey}/cids/JSON`;
+
+    for (let i = 0; i < retries; i++) {
+      const resp = await fetch(url);
+      const data = await resp.json();
+
+      if (data.IdentifierList?.CID?.length > 0) {
+        return data.IdentifierList.CID[0];
+      }
+
+      if (data.Waiting) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      } else {
+        break;
+      }
+    }
+
+    throw new Error("PubChem async request timed out or failed.");
+  }
+
+  async tryCIRApi(input) {
+    try {
+      this.outputCallback("Trying CIR API with input: " + input);
+      this.outputCallback(
+        "Connecting to Chemical Identifier Resolver online database..."
+      );
+
+      const response = await fetch(
+        `https://cactus.nci.nih.gov/chemical/structure/${encodeURIComponent(
+          input
+        )}/smiles`
+      );
+      if (response.ok) {
+        const smiles = await response.text();
+        this.outputCallback("Found molecule in online chemical database.");
+        this.outputCallback("CIR API returned SMILES: " + smiles);
+        return smiles;
+      }
+      this.outputCallback(`CIR API could not resolve: ${input}`);
+      return null;
+    } catch (error) {
+      this.outputCallback(`CIR API error: ${error.message}`);
+      return null;
+    }
+  }
+
+  renderMolecule(smiles) {
+    if (!smiles) {
+      this.outputCallback("No valid SMILES to render.");
+      return;
+    }
+
+    this.outputCallback("Rendering SMILES: " + smiles);
+
+    initRDKitModule()
+      .then((RDKit) => {
+        try {
+          this.outputCallback("Creating molecule from SMILES...");
+          const mol = RDKit.get_mol(smiles);
+
+          if (!mol) {
+            this.outputCallback("RDKit failed to create molecule.");
+            return;
+          }
+
+          try {
+            const atomCount = mol.get_num_atoms();
+            this.outputCallback(
+              `Molecule created successfully with ${atomCount} atoms`
+            );
+          } catch (e) {
+            this.outputCallback("Failed to get atom count: " + e.message);
+          }
+
+          const molBlock = mol.get_molblock();
+          this.outputCallback("MolBlock created successfully");
+
+          try {
+            this.outputCallback("Loading into Kekule.js...");
+            const kekuleMol = Kekule.IO.loadFormatData(molBlock, "mol");
+            const parentElem = document.getElementById("visualize");
+
+            Kekule.DomUtils.clearChildContent(parentElem);
+            this.outputCallback("Cleared visualization area");
+ 
+            this.outputCallback("Set visualization area styles");
+
+            this.outputCallback("Creating Viewer...");
+            const viewer2d = new Kekule.ChemWidget.Viewer(parentElem);
+            viewer2d.setChemObj(kekuleMol);
+            viewer2d.setRenderType(Kekule.Render.RendererType.R2D);  
+            viewer2d.setPredefinedSetting('fullFunc');
+            viewer2d.setMoleculeDisplayType(Kekule.Render.Molecule2DDisplayType.ATOM_SYMBOL); 
+            var color2DConfigs = viewer2d.getRenderConfigs().getColorConfigs();
+            color2DConfigs.setAtomColor('#A00000').setBondColor('#000000');  // set the default color for atoms and bonds
+            color2DConfigs.setGlyphStrokeColor('#C0C0C0');  
+            color2DConfigs.setLabelColor('#C0C0C0'); 
+
+            viewer2d.setEnableToolbar(true);  
+            
+            viewer2d.repaint();
+ 
+            this.outputCallback(`Visualization complete. SMILES: ${smiles}`);
+
+            const statusDiv = document.createElement("div");
+            statusDiv.textContent =
+              "Visualization attempt complete - check area below";
+            statusDiv.style.color = "blue";
+            statusDiv.style.fontWeight = "bold";
+            document.getElementById("output").appendChild(statusDiv);
+
+            var parentElem3d = document.getElementById('visualize3d');
+            Kekule.DomUtils.clearChildContent(parentElem3d);
+            var viewer3d = new Kekule.ChemWidget.Viewer(parentElem3d);
+            viewer3d.setRenderType(Kekule.Render.RendererType.R3D);  // Use 3D render
+            viewer3d.setChemObj(kekuleMol);  // Assign molecule
+            viewer3d.setEnableToolbar(true);  // Optional UI toolbar
+            viewer3d.setPredefinedSetting('ballStick');   
+            var display3DConfigs = viewer3d.getRenderConfigs().getMoleculeDisplayConfigs();
+            display3DConfigs.setDefAtomColor('#FFFFFF').setDefBondColor('#A0A000');
+            display3DConfigs.setUseAtomSpecifiedColor(false);  // turn off this to take the color to effect
+            viewer3d.requestRepaint();   
+          } catch (e) {
+            this.outputCallback(`Error in Kekule rendering: ${e.message}`);
+          }
+        } catch (e) {
+          this.outputCallback(`Error creating molecule: ${e.message}`);
+        }
+      })
+      .catch((err) => {
+        this.outputCallback(`RDKit initialization error: ${err.message}`);
+      });
   }
 
   getVolume(mass, density) {
@@ -394,7 +643,9 @@ export default class Interpretor {
   isCombustionReaction(reactants, products, requiredProducts) {
     // Check that one valid fuel is present, along with O2 on the reactant side.
     const reactantParts = reactants.split("+").map((s) => s.trim());
-    const hasFuel = reactantParts.some((part) => validCombustionFuels.includes(part));
+    const hasFuel = reactantParts.some((part) =>
+      validCombustionFuels.includes(part)
+    );
     const hasO2 = reactantParts.includes("O2");
 
     // Check that every required product (CO2, H2O) is present.
@@ -409,7 +660,7 @@ export default class Interpretor {
   isAcid(compound) {
     return acids.includes(compound);
   }
-  
+
   isBase(compound) {
     return bases.includes(compound);
   }
