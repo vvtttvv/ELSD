@@ -454,6 +454,10 @@ export function getReactionInfo(acid, reactant, isConcentrated = false) {
   
   // Check if reactant is an oxide
   const oxideType = classifyOxide(reactant);
+  console.log("[acidReactivity] Checking oxide classification...");
+  console.log("Reactant:", reactant);
+  console.log("Classified oxide type:", oxideType);
+
   if (oxideType) {
     reactantType = `${oxideType} oxide`;
     reactionDetails = acidReactions[acidStrength][oxideType];

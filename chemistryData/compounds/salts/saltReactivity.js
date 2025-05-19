@@ -376,6 +376,8 @@ export const saltReactions = {
 export function canReact(salt, reactant) {
   // Determine the salt category
   const saltType = classifySaltByType(salt);
+  if (!saltType || !saltReactions[saltType]) return false;
+
   
   // Check if reactant is a metal
   if (isMetal(reactant)) {
@@ -420,6 +422,7 @@ export function predictProducts(salt, reactant) {
   
   // Determine the salt category
   const saltType = classifySaltByType(salt);
+  if (!saltType || !saltReactions[saltType]) return false;
   
   // Check if reactant is a metal
   if (isMetal(reactant)) {
@@ -464,6 +467,7 @@ export function getReactionInfo(salt, reactant) {
   
   // Determine the salt category and reaction details
   const saltType = classifySaltByType(salt);
+  if (!saltType || !saltReactions[saltType]) return false;
   let reactantType;
   let reactionDetails;
   

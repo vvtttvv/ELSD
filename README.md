@@ -72,7 +72,7 @@ Output: `C6H6 + O2 -> CO2 + H2O`
 - [Specific volume](#specific-volume)
 - [Acid check](#acid-check)
 - [Base check](#base-check)
-- [Visualise formula](#visualise-formula)
+- [Visualize formula](#visualize-formula)
 
 ## Reaction possibility
 Checks whether a given chemical reaction is feasible based on known compound interactions and rules.  
@@ -124,7 +124,8 @@ Returns `true` if the compound is basic.
 **Input:** `show(isBase("NaOH"));`  
 **Output:** `true`
 
-## Visualise formula
-Displays a 2D graphical representation of a chemical formula or molecule.  
-**Input:** `visualise("C6H6")`  
+## Visualize formula
+Displays a 2D graphical representation of a chemical formula or molecule **It's preferable to use the name of the formula e.g. "benzene" it is more accurate and gives faster results**.  
+**Input:** `visualize("C6H6")`  |   `visualize("benzene")`
 **Output:** 
+![alt text](/images/image.png)

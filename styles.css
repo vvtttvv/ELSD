@@ -130,6 +130,7 @@ button:hover{
   color: #222;
   font-size: 14px;
   line-height: 1.5;
+  z-index: 1001;
 }
 
 #docContent h2 {
@@ -166,4 +167,13 @@ button:hover{
   background-color: #f0f0f0;
   padding: 2px 4px;
   border-radius: 4px;
+}
+
+
+#visualize {
+    width: 400px;
+    height: 300px;
+    border: 1px solid #ccc;
+    background-color: #ffffff;
+    margin: auto;
 }
