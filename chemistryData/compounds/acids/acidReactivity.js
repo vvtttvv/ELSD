@@ -28,7 +28,6 @@ export const acidReactions = {
         } else if (basicity === 2) {
           salt = `${metal}${radical}`; // For H2SO4 + Zn → ZnSO4
         } else {
-          // Complex case, would need more sophisticated formula building
           salt = `${metal}${radical}`;
         }
         
@@ -123,13 +122,13 @@ export const acidReactions = {
         
         // Reactions differ based on anion of the salt
         if (anion === "CO3") {
-          // e.g., 2HCl + Na2CO3 → 2NaCl + H2O + CO2
+          // e.g., HCl + Na2CO3 → 2NaCl + H2O + CO2
           return [`${cation}${radical}`, "H2O", "CO2"];
         } else if (anion === "SO3") {
-          // e.g., 2HCl + Na2SO3 → 2NaCl + H2O + SO2
+          // e.g., HCl + Na2SO3 → 2NaCl + H2O + SO2
           return [`${cation}${radical}`, "H2O", "SO2"];
         } else if (anion === "S") {
-          // e.g., 2HCl + Na2S → 2NaCl + H2S
+          // e.g., HCl + Na2S → 2NaCl + H2S
           return [`${cation}${radical}`, "H2S"];
         } else if (anion === "HCO3") {
           // e.g., HCl + NaHCO3 → NaCl + H2O + CO2
@@ -308,13 +307,7 @@ export const acidReactions = {
   }
 };
 
-/**
- * Determines if a reaction involving an acid is possible
- * @param {string} acid - Acid formula
- * @param {string} reactant - Reactant formula
- * @param {boolean} isConcentrated - Whether the acid is concentrated (for special reactions)
- * @returns {boolean} - Whether the reaction is possible
- */
+//Determines if a reaction involving an acid is possible
 export function canReact(acid, reactant, isConcentrated = false) {
   // Handle special case for concentrated acids
   if (isConcentrated && 
@@ -356,13 +349,7 @@ export function canReact(acid, reactant, isConcentrated = false) {
   return false;
 }
 
-/**
- * Predicts the products of a reaction involving an acid
- * @param {string} acid - Acid formula
- * @param {string} reactant - Reactant formula
- * @param {boolean} isConcentrated - Whether the acid is concentrated (for special reactions)
- * @returns {Array|null} - Array of product formulas or null if no reaction
- */
+//Predicts the products of a reaction involving an acid
 export function predictProducts(acid, reactant, isConcentrated = false) {
   // First check if the reaction is possible
   if (!canReact(acid, reactant, isConcentrated)) {
@@ -415,13 +402,7 @@ export function predictProducts(acid, reactant, isConcentrated = false) {
   return null;
 }
 
-/**
- * Gets information about a reaction involving an acid
- * @param {string} acid - Acid formula
- * @param {string} reactant - Reactant formula
- * @param {boolean} isConcentrated - Whether the acid is concentrated
- * @returns {Object|null} - Information about the reaction or null if not possible
- */
+//Gets information about a reaction involving an acid
 export function getReactionInfo(acid, reactant, isConcentrated = false) {
   // First check if the reaction is possible
   if (!canReact(acid, reactant, isConcentrated)) {
@@ -454,9 +435,9 @@ export function getReactionInfo(acid, reactant, isConcentrated = false) {
   
   // Check if reactant is an oxide
   const oxideType = classifyOxide(reactant);
-  console.log("[acidReactivity] Checking oxide classification...");
-  console.log("Reactant:", reactant);
-  console.log("Classified oxide type:", oxideType);
+  // console.log("[acidReactivity] Checking oxide classification...");
+  // console.log("Reactant:", reactant);
+  // console.log("Classified oxide type:", oxideType);
 
   if (oxideType) {
     reactantType = `${oxideType} oxide`;

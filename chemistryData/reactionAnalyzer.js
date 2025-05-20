@@ -16,12 +16,7 @@ export class ReactionAnalyzer {
     this.saltHandler = new SaltHandler();
   }
 
-  /**
- * Determines if a reaction is possible
- * @param {string} reactionString - Reaction string in format "A + B -> C + D"
- * @param {Object} options - Additional options (like concentrated acid)
- * @returns {boolean} - Whether the reaction is possible
- */
+  //Determines if a reaction is possible
 isPossible(reactionString, options = {}) {
   console.log("isPossible() called with:", reactionString);
   
@@ -29,23 +24,27 @@ isPossible(reactionString, options = {}) {
     // Validate reaction string format
     if (!reactionString || typeof reactionString !== 'string') {
       console.warn("Invalid reaction string provided");
+      this.outputCallback && this.outputCallback(`Invalid reaction format: "${reactionString}"`);
       return false;
     }
     
     const analysis = this.analyzeReaction(reactionString, options);
-    return analysis && analysis.possible || false;
+    const isPossible = analysis && analysis.possible || false;
+    
+    // Format the detailed output if outputCallback is available
+    if (this.outputCallback) {
+      this.outputCallback(this.formatReactionAnalysis(reactionString, analysis));
+    }
+    
+    return isPossible;
   } catch (error) {
     console.error("Error in isPossible():", error.message);
+    this.outputCallback && this.outputCallback(`Error analyzing reaction: ${error.message}`);
     return false;
   }
 }
 
-  /**
-   * Analyzes a reaction string by trying all handlers until one returns a possible match
-   * @param {string} reactionString - Reaction string in format "A + B -> C + D"
-   * @param {Object} options - Additional options (like concentrated acid)
-   * @returns {Object} - Comprehensive analysis of the reaction
-   */
+  //Analyzes a reaction string by trying all handlers until one returns a possible match
   analyzeReaction(reactionString, options = {}) {
     console.log("analyzeReaction() called with:", reactionString);
     const parts = reactionString.split("->");
@@ -90,11 +89,7 @@ isPossible(reactionString, options = {}) {
     };
   }
 
-  /**
-   * Identifies the types of compounds in a reaction
-   * @param {Array} compounds - Array of chemical formulas
-   * @returns {Object} - Object indicating what types of compounds are present
-   */
+  //Identifies the types of compounds in a reaction
   identifyCompoundTypes(compounds) {
     return {
       hasOxide: compounds.some(c => this.oxideHandler.isOxide(c)),
@@ -104,12 +99,7 @@ isPossible(reactionString, options = {}) {
     };
   }
 
-  /**
-   * Predicts the products of a reaction
-   * @param {string} reactionString - Reaction string with or without products
-   * @param {Object} options - Additional options (like concentrated acid)
-   * @returns {Array|null} - Predicted products or null if reaction not possible
-   */
+  //Predicts the products of a reaction
   predictProducts(reactionString, options = {}) {
     if (!reactionString.includes("->")) {
       reactionString = reactionString + " -> ?";
@@ -119,11 +109,7 @@ isPossible(reactionString, options = {}) {
     return analysis.predictedProducts || null;
   }
 
-  /**
-   * Gets detailed information about a specific compound
-   * @param {string} formula - Chemical formula
-   * @returns {Object} - Detailed information about the compound
-   */
+  //Gets detailed information about a specific compound
   getCompoundInfo(formula) {
     if (this.acidHandler.isAcid(formula)) {
       const acidInfo = this.acidHandler.classifyAcid(formula);
@@ -163,5 +149,66 @@ isPossible(reactionString, options = {}) {
       type: "unknown",
       formula
     };
+  }
+
+
+  //Formats the reaction analysis result into a user-friendly message
+  formatReactionAnalysis(reactionString, analysis) {
+    if (!analysis) {
+      return `The reaction "${reactionString}" could not be analyzed.`;
+    }
+    
+    // Basic possibility statement
+    let message = `The reaction "${reactionString}" is ${analysis.possible ? "chemically possible" : "not chemically possible"}`;
+    if (analysis.possible) {
+      message += ".";
+    } else if (analysis.error) {
+      message += `: ${analysis.error}`;
+    } else {
+      message += ".";
+    }
+    
+    // Add reaction type if available
+    if (analysis.reactionType) {
+      const formattedType = analysis.reactionType
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      
+      message += `\nReaction type: ${formattedType}`;
+    }
+    
+    // Add reaction conditions if available
+    if (analysis.conditions && analysis.conditions.length > 0) {
+      message += `\nConditions: ${analysis.conditions.join(", ")}`;
+    }
+    
+    // Add information about reactants if available
+    if (analysis.reactantTypes) {
+      message += "\n\nReactant information:";
+      for (const [formula, type] of Object.entries(analysis.reactantTypes)) {
+        message += `\n• ${formula}: ${type}`;
+      }
+    }
+    
+    // Add information about predicted products if available
+    if (analysis.predictedProducts && analysis.predictedProducts.length > 0) {
+      message += `\n\nPredicted products: ${analysis.predictedProducts.join(" + ")}`;
+      
+      // Add information about whether products match
+      if (analysis.productsMatch !== undefined) {
+        if (analysis.productsMatch) {
+          message += "\nThe predicted products match the given products.";
+        } else {
+          message += "\nThe predicted products differ from the given products.";
+        }
+      }
+    }
+    
+    return message;
+  }
+  
+  setOutputCallback(callback) {
+    this.outputCallback = callback;
   }
 }

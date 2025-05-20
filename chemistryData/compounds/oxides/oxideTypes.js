@@ -10,7 +10,7 @@ export const oxideCategories = {
   SUPEROXIDE: "superoxide"
 };
 
-// Define known oxides by category
+// Known oxides by category
 export const knownOxides = {
   // Basic oxides - metal oxides from groups 1 and 2, and some transition metals
   "Li2O": oxideCategories.BASIC,
@@ -85,11 +85,7 @@ export const knownOxides = {
   "CsO2": oxideCategories.SUPEROXIDE   // Cesium superoxide
 };
 
-/**
- * Determines if a formula represents an oxide compound
- * @param {string} formula - Chemical formula to check
- * @returns {boolean} - True if the formula represents an oxide
- */
+//Determines if a formula represents an oxide compound
 export function isOxide(formula) {
   // Check if the formula contains oxygen and is not a hydroxide, acid, or other non-oxide
   if (!formula.includes('O')) return false;
@@ -127,11 +123,7 @@ export function isOxide(formula) {
   return false;
 }
 
-/**
- * Extracts the main element (non-oxygen) from an oxide formula
- * @param {string} formula - The oxide formula
- * @returns {string} - The main element symbol
- */
+//Extracts the main element (non-oxygen) from an oxide formula
 export function extractMainElement(formula) {
   // Extract the first element symbol
   const match = formula.match(/^([A-Z][a-z]?)(\d*)/);
@@ -141,11 +133,7 @@ export function extractMainElement(formula) {
   return null;
 }
 
-/**
- * Determines if a formula represents a peroxide (contains O2^2- group)
- * @param {string} formula - Chemical formula to check
- * @returns {boolean} - True if the formula represents a peroxide
- */
+//Determines if a formula represents a peroxide (contains O2^2- group)
 export function isPeroxide(formula) {
   if (knownOxides[formula] === oxideCategories.PEROXIDE) return true;
   
@@ -153,11 +141,7 @@ export function isPeroxide(formula) {
   return formula.match(/^([A-Z][a-z]?)(\d*)O2$/);
 }
 
-/**
- * Determines if a formula represents a superoxide (contains O2^- group)
- * @param {string} formula - Chemical formula to check
- * @returns {boolean} - True if the formula represents a superoxide
- */
+//Determines if a formula represents a superoxide (contains O2^- group)
 export function isSuperoxide(formula) {
   if (knownOxides[formula] === oxideCategories.SUPEROXIDE) return true;
   
@@ -170,11 +154,7 @@ export function isSuperoxide(formula) {
   return false;
 }
 
-/**
- * Classifies an oxide based on its chemical formula
- * @param {string} formula - The oxide formula to classify
- * @returns {string} - The oxide category (basic, acidic, amphoteric, etc.)
- */
+//Classifies an oxide based on its chemical formula
 export function classifyOxide(formula) {
   // Check if it's a known oxide
   if (knownOxides[formula]) {
@@ -201,11 +181,7 @@ export function classifyOxide(formula) {
   return null;
 }
 
-/**
- * Extracts the oxidation state of the main element in an oxide
- * @param {string} formula - The oxide formula
- * @returns {number} - The oxidation state
- */
+//Extracts the oxidation state of the main element in an oxide
 export function getOxidationState(formula) {
   // Extract elements and their counts
   const mainElement = extractMainElement(formula);
@@ -234,11 +210,7 @@ export function getOxidationState(formula) {
   }
 }
 
-/**
- * Gets the corresponding acid for an acidic oxide
- * @param {string} formula - The acidic oxide formula
- * @returns {string} - The corresponding acid formula
- */
+//Gets the corresponding acid for an acidic oxide
 export function getCorrespondingAcid(formula) {
   if (classifyOxide(formula) !== oxideCategories.ACIDIC) return null;
   
@@ -260,11 +232,7 @@ export function getCorrespondingAcid(formula) {
   return acidMap[formula] || null;
 }
 
-/**
- * Gets the corresponding hydroxide for a basic oxide
- * @param {string} formula - The basic oxide formula
- * @returns {string} - The corresponding hydroxide formula
- */
+//Gets the corresponding hydroxide for a basic oxide
 export function getCorrespondingHydroxide(formula) {
   if (classifyOxide(formula) !== oxideCategories.BASIC) return null;
   

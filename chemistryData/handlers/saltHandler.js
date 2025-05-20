@@ -14,29 +14,17 @@ export class SaltHandler {
     // Initialize any required state
   }
 
-  /**
-   * Checks if a compound is a salt
-   * @param {string} formula - Chemical formula to check
-   * @returns {boolean} - True if the formula represents a salt
-   */
+  //Checks if a compound is a salt
   isSalt(formula) {
     return isSalt(formula);
   }
 
-  /**
-   * Gets comprehensive classification of a salt
-   * @param {string} formula - The salt formula to classify
-   * @returns {Object|null} - Classification details or null if not a salt
-   */
+  //Gets comprehensive classification of a salt
   classifySalt(formula) {
     return classifySalt(formula);
   }
 
-  /**
-   * Gets a descriptive name for a salt category
-   * @param {string} category - The salt category code
-   * @returns {string} - Human-readable category name
-   */
+  //Gets a descriptive name for a salt category
   getCategoryName(category) {
     const categoryNames = {
       [saltCategories.NORMAL]: "Normal Salt",
@@ -51,12 +39,7 @@ export class SaltHandler {
     return categoryNames[category] || "Unknown";
   }
 
-  /**
-   * Determines if a reaction involving a salt is possible
-   * @param {string} formula1 - First compound formula
-   * @param {string} formula2 - Second compound formula
-   * @returns {boolean} - Whether the reaction is possible
-   */
+  //Determines if a reaction involving a salt is possible
   canReact(formula1, formula2) {
     // Check if at least one compound is a salt
     if (this.isSalt(formula1)) {
@@ -68,12 +51,7 @@ export class SaltHandler {
     return false;
   }
 
-  /**
-   * Predicts products for a reaction involving a salt
-   * @param {string} formula1 - First compound formula
-   * @param {string} formula2 - Second compound formula
-   * @returns {Array|null} - Array of product formulas or null if no reaction
-   */
+  //Predicts products for a reaction involving a salt
   predictProducts(formula1, formula2) {
     // Check if at least one compound is a salt
     if (this.isSalt(formula1)) {
@@ -85,12 +63,7 @@ export class SaltHandler {
     return null;
   }
 
-  /**
-   * Gets detailed information about a reaction involving a salt
-   * @param {string} formula1 - First compound formula
-   * @param {string} formula2 - Second compound formula
-   * @returns {Object|null} - Reaction details or null if no reaction
-   */
+  //Gets detailed information about a reaction involving a salt
   getReactionInfo(formula1, formula2) {
     // Check if at least one compound is a salt
     if (this.isSalt(formula1)) {
@@ -102,11 +75,7 @@ export class SaltHandler {
     return null;
   }
 
-  /**
-   * Analyzes a reaction string involving salts
-   * @param {string} reactionString - Reaction string in format "A + B -> C + D"
-   * @returns {Object} - Analysis of the reaction including possibility and products
-   */
+  //Analyzes a reaction string involving salts
   analyzeReaction(reactionString) {
     console.log("SaltHandler analyzing reaction:", reactionString);
 
@@ -220,11 +189,7 @@ export class SaltHandler {
     };
   }
 
-  /**
-   * Gets a descriptive name for the salt type
-   * @param {string} formula - Salt formula
-   * @returns {string} - Descriptive type name
-   */
+  // Gets a descriptive name for the salt type
   getSaltTypeName(formula) {
     const saltInfo = classifySalt(formula);
     if (!saltInfo) return "Not a salt";
@@ -265,11 +230,7 @@ export class SaltHandler {
     return typeName;
   }
 
-  /**
-   * Gets a descriptive name for the reactant type
-   * @param {string} formula - Reactant formula
-   * @returns {string} - Descriptive type name
-   */
+  //Gets a descriptive name for the reactant type
   getReactantTypeName(formula) {
     // Check if it's a metal
     if (isMetal(formula)) {
@@ -310,17 +271,12 @@ export class SaltHandler {
     return "Unknown";
   }
 
-  /**
-   * Compares predicted products with products given in the reaction
-   * @param {Array} predicted - Array of predicted product formulas
-   * @param {Array} given - Array of given product formulas
-   * @returns {boolean} - Whether the products match
-   */
+  //Compares predicted products with products given in the reaction
   compareProducts(predicted, given) {
     if (!predicted || !given) return false;
     if (predicted.length !== given.length) return false;
     
-    // Simple comparison - would need more sophisticated balancing in real implementation
+    // Simple comparison
     const normalizedPredicted = [...predicted].sort();
     const normalizedGiven = [...given].sort();
     

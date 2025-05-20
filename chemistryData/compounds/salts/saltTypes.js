@@ -49,9 +49,7 @@ export const saltCategories = {
   INSOLUBLE: "insoluble"
 };
 
-/**
- * Mapping of known salts to their categories
- */
+//Mapping of known salts to their categories
 export const knownSalts = {
   // Normal salts (from neutralization of acids and bases)
   "NaCl": [saltCategories.NORMAL, saltCategories.SOLUBLE],
@@ -101,11 +99,7 @@ export const knownSalts = {
   "CaOCl2": [saltCategories.MIXED, saltCategories.SOLUBLE] // Bleaching powder
 };
 
-/**
- * Determines if a formula represents a salt
- * @param {string} formula - Chemical formula to check
- * @returns {boolean} - True if the formula represents a salt
- */
+//Determines if a formula represents a salt
 export function isSalt(formula) {
   // Check if it's a known salt
   if (formula in knownSalts) return true;
@@ -141,7 +135,7 @@ export function isSalt(formula) {
       !formula.startsWith('H') && 
       !formula.includes('OH') &&
       formula.length > 1) {
-    // Exclude simple binary compounds like NaCl
+    // Excludes simple binary compounds like NaCl
     if (formula.match(/[A-Z][a-z]?[0-9]?[A-Z]/)) {
       return true;
     }
@@ -150,20 +144,12 @@ export function isSalt(formula) {
   return false;
 }
 
-/**
- * Extracts the cation and anion from a salt formula
- * @param {string} formula - The salt formula
- * @returns {Object} - Object containing cation and anion
- */
+//Extracts the cation and anion from a salt formula
 export function extractSaltComponents(formula) {
   return extractIons(formula);
 }
 
-/**
- * Determines if a salt is soluble in water
- * @param {string} formula - The salt formula
- * @returns {boolean} - Whether the salt is soluble
- */
+//Determines if a salt is soluble in water
 export function isSoluble(formula) {
   // Check if it's a known salt
   if (knownSalts[formula]) {
@@ -210,11 +196,7 @@ export function isSoluble(formula) {
   return false;
 }
 
-/**
- * Determines if a salt is acidic, basic, or neutral
- * @param {string} formula - The salt formula
- * @returns {string} - Salt pH category (acidic, basic, or neutral)
- */
+//Determines if a salt is acidic, basic, or neutral
 export function determineSaltpH(formula) {
   // Check if it's a known salt
   if (knownSalts[formula]) {
@@ -262,11 +244,7 @@ export function determineSaltpH(formula) {
   return "neutral";
 }
 
-/**
- * Classifies a salt as normal, acidic, basic, double, or mixed
- * @param {string} formula - The salt formula
- * @returns {string} - Salt category
- */
+//Classifies a salt as normal, acidic, basic, double, or mixed
 export function classifySaltByType(formula) {
   // Check if it's a known salt
   if (knownSalts[formula]) {
@@ -312,11 +290,7 @@ export function classifySaltByType(formula) {
   return saltCategories.NORMAL;
 }
 
-/**
- * Comprehensive classification of a salt
- * @param {string} formula - The salt formula
- * @returns {Object|null} - Complete classification or null if not a salt
- */
+//Comprehensive classification of a salt
 export function classifySalt(formula) {
   // Check if it's a salt first
   if (!isSalt(formula)) return null;

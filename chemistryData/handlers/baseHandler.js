@@ -11,29 +11,17 @@ export class BaseHandler {
     // Initialize any required state
   }
 
-  /**
-   * Checks if a compound is a base
-   * @param {string} formula - Chemical formula to check
-   * @returns {boolean} - True if the formula represents a base
-   */
+  //Checks if a compound is a base
   isBase(formula) {
     return isBase(formula);
   }
 
-  /**
-   * Gets comprehensive classification of a base
-   * @param {string} formula - The base formula to classify
-   * @returns {Object|null} - Classification details or null if not a base
-   */
+  //Gets comprehensive classification of a base
   classifyBase(formula) {
     return classifyBase(formula);
   }
 
-  /**
-   * Gets a descriptive name for a base category
-   * @param {string} category - The base category code
-   * @returns {string} - Human-readable category name
-   */
+  //Gets a descriptive name for a base category
   getCategoryName(category) {
     const categoryNames = {
       [baseCategories.STRONG]: "Strong Base",
@@ -46,12 +34,7 @@ export class BaseHandler {
     return categoryNames[category] || "Unknown";
   }
 
-  /**
-   * Determines if a reaction involving a base is possible
-   * @param {string} formula1 - First compound formula
-   * @param {string} formula2 - Second compound formula
-   * @returns {boolean} - Whether the reaction is possible
-   */
+  //Determines if a reaction involving a base is possible
   canReact(formula1, formula2) {
     // Check if at least one compound is a base
     if (this.isBase(formula1)) {
@@ -63,12 +46,7 @@ export class BaseHandler {
     return false;
   }
 
-  /**
-   * Predicts products for a reaction involving a base
-   * @param {string} formula1 - First compound formula
-   * @param {string} formula2 - Second compound formula
-   * @returns {Array|null} - Array of product formulas or null if no reaction
-   */
+  //Predicts products for a reaction involving a base
   predictProducts(formula1, formula2) {
     // Check if at least one compound is a base
     if (this.isBase(formula1)) {
@@ -80,12 +58,7 @@ export class BaseHandler {
     return null;
   }
 
-  /**
-   * Gets detailed information about a reaction involving a base
-   * @param {string} formula1 - First compound formula
-   * @param {string} formula2 - Second compound formula
-   * @returns {Object|null} - Reaction details or null if no reaction
-   */
+  //Gets detailed information about a reaction involving a base
   getReactionInfo(formula1, formula2) {
     // Check if at least one compound is a base
     if (this.isBase(formula1)) {
@@ -197,11 +170,7 @@ export class BaseHandler {
     };
   }
 
-  /**
-   * Gets a descriptive name for the base type
-   * @param {string} formula - Base formula
-   * @returns {string} - Descriptive type name
-   */
+  //Gets a descriptive name for the base type
   getBaseTypeName(formula) {
     const baseInfo = classifyBase(formula);
     if (!baseInfo) return "Not a base";
@@ -225,11 +194,7 @@ export class BaseHandler {
     return typeName;
   }
 
-  /**
-   * Gets a descriptive name for the reactant type
-   * @param {string} formula - Reactant formula
-   * @returns {string} - Descriptive type name
-   */
+  //Gets a descriptive name for the reactant type
   getReactantTypeName(formula) {
     // Check if it's an oxide
     const oxideType = classifyOxide(formula);
@@ -261,17 +226,12 @@ export class BaseHandler {
     return "Unknown";
   }
 
-  /**
-   * Compares predicted products with products given in the reaction
-   * @param {Array} predicted - Array of predicted product formulas
-   * @param {Array} given - Array of given product formulas
-   * @returns {boolean} - Whether the products match
-   */
+  //Compares predicted products with products given in the reaction
   compareProducts(predicted, given) {
     if (!predicted || !given) return false;
     if (predicted.length !== given.length) return false;
     
-    // Simple comparison - would need more sophisticated balancing in real implementation
+    // Simple comparison
     const normalizedPredicted = predicted.sort();
     const normalizedGiven = given.sort();
     

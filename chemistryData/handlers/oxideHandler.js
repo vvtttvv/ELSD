@@ -10,29 +10,17 @@ export class OxideHandler {
     // Initialize any required state
   }
 
-  /**
-   * Checks if a compound is an oxide
-   * @param {string} formula - Chemical formula to check
-   * @returns {boolean} - True if the formula represents an oxide
-   */
+  //Checks if a compound is an oxide
   isOxide(formula) {
     return isOxide(formula);
   }
 
-  /**
-   * Classifies an oxide into its category
-   * @param {string} formula - The oxide formula to classify
-   * @returns {string|null} - The oxide category or null if not an oxide
-   */
+  //Classifies an oxide into its category
   classifyOxide(formula) {
     return classifyOxide(formula);
   }
 
-  /**
-   * Gets a descriptive name for an oxide category
-   * @param {string} category - The oxide category code
-   * @returns {string} - Human-readable category name
-   */
+  //Gets a descriptive name for an oxide category
   getCategoryName(category) {
     const categoryNames = {
       [oxideCategories.BASIC]: "Basic Oxide",
@@ -46,12 +34,7 @@ export class OxideHandler {
     return categoryNames[category] || "Unknown";
   }
 
-  /**
-   * Determines if a reaction involving oxides is possible
-   * @param {string} formula1 - First compound formula
-   * @param {string} formula2 - Second compound formula
-   * @returns {boolean} - Whether the reaction is possible
-   */
+  //Determines if a reaction involving oxides is possible
   canReact(formula1, formula2) {
     // Check if at least one compound is an oxide
     if (!this.isOxide(formula1) && !this.isOxide(formula2)) {
@@ -61,12 +44,7 @@ export class OxideHandler {
     return canReact(formula1, formula2);
   }
 
-  /**
-   * Predicts products for a reaction involving oxides
-   * @param {string} formula1 - First compound formula
-   * @param {string} formula2 - Second compound formula
-   * @returns {Array|null} - Array of product formulas or null if no reaction
-   */
+  //Predicts products for a reaction involving oxides
   predictProducts(formula1, formula2) {
     // Check if at least one compound is an oxide
     if (!this.isOxide(formula1) && !this.isOxide(formula2)) {
@@ -76,11 +54,7 @@ export class OxideHandler {
     return predictProducts(formula1, formula2);
   }
 
-  /**
-   * Analyzes a reaction string involving oxides
-   * @param {string} reactionString - Reaction string in format "A + B -> C + D"
-   * @returns {Object} - Analysis of the reaction including possibility and products
-   */
+  //Analyzes a reaction string involving oxides
   analyzeReaction(reactionString) {
     // Parse the reaction string
     const parts = reactionString.split("->");
@@ -141,17 +115,12 @@ export class OxideHandler {
     };
   }
 
-  /**
-   * Compares predicted products with products given in the reaction
-   * @param {Array} predicted - Array of predicted product formulas
-   * @param {Array} given - Array of given product formulas
-   * @returns {boolean} - Whether the products match
-   */
+  //Compares predicted products with products given in the reaction
   compareProducts(predicted, given) {
     if (!predicted || !given) return false;
     if (predicted.length !== given.length) return false;
     
-    // Simple comparison - would need more sophisticated balancing in real implementation
+    // Simple comparison
     const normalizedPredicted = predicted.sort();
     const normalizedGiven = given.sort();
     

@@ -379,52 +379,7 @@ export const saltReactions = {
   }
 };
 
-/**
- * Determines if a reaction involving a salt is possible
- * @param {string} salt - Salt formula
- * @param {string} reactant - Reactant formula
- * @returns {boolean} - Whether the reaction is possible
- */
-// export function canReact(salt, reactant) {
-//   // Determine the salt category
-//   const saltType = classifySaltByType(salt);
-  
-//   // Check if reactant is a metal
-//   if (isMetal(reactant)) {
-//     return saltReactions[saltType]["metal"]?.possible?.(salt, reactant) || false;
-//   }
-  
-//   // Check if reactant is an acid
-//   if (reactant.startsWith('H') && !reactant.startsWith('H2O')) {
-//     return saltReactions[saltType]["acid"]?.possible?.(salt, reactant) || false;
-//   }
-  
-//   // Check if reactant is a base
-//   if (reactant.includes('OH')) {
-//     return saltReactions[saltType]["base"]?.possible?.(salt, reactant) || false;
-//   }
-  
-//   // Check if reactant is another salt
-//   if (!reactant.startsWith('H') && !reactant.includes('OH') && 
-//       !reactant.match(/^[A-Z][a-z]?$/) && !reactant.includes('O')) {
-//     return saltReactions[saltType]["salt"]?.possible?.(salt, reactant) || false;
-//   }
-  
-//   // For thermal decomposition (special case)
-//   if (reactant === "heat") {
-//     return saltReactions[saltType]["heat"]?.possible?.(salt) || false;
-//   }
-  
-//   return false;
-// }
-
-
-/**
- * Determines if a reaction involving a salt is possible
- * @param {string} salt - Salt formula
- * @param {string} reactant - Reactant formula
- * @returns {boolean} - Whether the reaction is possible
- */
+//Determines if a reaction involving a salt is possible
 export function canReact(salt, reactant) {
   console.log(`Checking reaction possibility for ${salt} + ${reactant}`);
   
@@ -525,12 +480,7 @@ export function canReact(salt, reactant) {
   return false;
 }
 
-/**
- * Predicts the products of a reaction involving a salt
- * @param {string} salt - Salt formula
- * @param {string} reactant - Reactant formula
- * @returns {Array|null} - Array of product formulas or null if no reaction
- */
+//Predicts the products of a reaction involving a salt
 export function predictProducts(salt, reactant) {
   // First check if the reaction is possible
   if (!canReact(salt, reactant)) {
@@ -569,12 +519,7 @@ export function predictProducts(salt, reactant) {
   return null;
 }
 
-/**
- * Gets information about a reaction involving a salt
- * @param {string} salt - Salt formula
- * @param {string} reactant - Reactant formula
- * @returns {Object|null} - Information about the reaction or null if not possible
- */
+//Gets information about a reaction involving a salt
 export function getReactionInfo(salt, reactant) {
   // First check if the reaction is possible
   if (!canReact(salt, reactant)) {

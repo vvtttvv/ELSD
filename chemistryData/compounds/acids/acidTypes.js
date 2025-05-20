@@ -12,9 +12,7 @@ export const acidCategories = {
   NONOXY: "nonoxy"
 };
 
-/**
- * Mapping of common acids to their categories
- */
+//Mapping of common acids to their categories
 export const knownAcids = {
   // Strong acids
   "HCl": [acidCategories.STRONG, acidCategories.MONOPROTIC, acidCategories.NONOXY],
@@ -49,9 +47,7 @@ export const knownAcids = {
   "HMnO4": [acidCategories.STRONG, acidCategories.MONOPROTIC, acidCategories.OXYACID] // Permanganic acid
 };
 
-/**
- * Mapping of acids to their corresponding acid radicals
- */
+//Mapping of acids to their corresponding acid radicals
 export const acidRadicals = {
   "HF": "F", 
   "HCl": "Cl",
@@ -78,9 +74,7 @@ export const acidRadicals = {
   "HMnO4": "MnO4"
 };
 
-/**
- * Mapping of acid radicals to their corresponding anion names
- */
+//Mapping of acid radicals to their corresponding anion names
 export const anionNames = {
   "F": "fluoride",
   "Cl": "chloride",
@@ -106,9 +100,7 @@ export const anionNames = {
   "MnO4": "permanganate"
 };
 
-/**
- * Mapping of acids to their corresponding oxide sources
- */
+//Mapping of acids to their corresponding oxide sources
 export const acidOxides = {
   "HNO3": "N2O5",
   "HNO2": "N2O3",
@@ -127,11 +119,7 @@ export const acidOxides = {
   "HClO4": "Cl2O7"
 };
 
-/**
- * Determines if a formula represents an acid
- * @param {string} formula - Chemical formula to check
- * @returns {boolean} - True if the formula represents an acid
- */
+//Determines if a formula represents an acid
 export function isAcid(formula) {
   // Check if it's a known acid
   if (formula in knownAcids) return true;
@@ -151,17 +139,10 @@ export function isAcid(formula) {
   return false;
 }
 
-/**
- * Extract the acid radical from an acid formula
- * @param {string} formula - Acid formula
- * @returns {string|null} - Acid radical or null if not recognized
- */
+//Extract the acid radical from an acid formula
 export function extractAcidRadical(formula) {
   // Check if it's in our known list
   if (acidRadicals[formula]) return acidRadicals[formula];
-  
-  // Try to extract the radical based on patterns
-  // This is a simplified approach and would need more sophisticated parsing for complex formulas
   
   // Remove H atoms from the front
   if (formula.startsWith('H')) {
@@ -180,11 +161,8 @@ export function extractAcidRadical(formula) {
   return null;
 }
 
-/**
- * Determines the basicity (number of replaceable H atoms) of an acid
- * @param {string} formula - Acid formula
- * @returns {number} - Basicity (1 for monoprotic, 2 for diprotic, etc.)
- */
+//Determines the basicity (number of replaceable H atoms) of an acid
+
 export function determineBasicity(formula) {
   // Check if it's a known acid
   if (knownAcids[formula]) {
@@ -210,11 +188,7 @@ export function determineBasicity(formula) {
   return 0; // Not determined
 }
 
-/**
- * Determines if an acid is an oxyacid (contains oxygen) or non-oxyacid
- * @param {string} formula - Acid formula
- * @returns {string} - "oxyacid" or "nonoxy"
- */
+//Determines if an acid is an oxyacid (contains oxygen) or non-oxyacid
 export function determineAcidType(formula) {
   // Check if it's a known acid
   if (knownAcids[formula]) {
@@ -231,11 +205,7 @@ export function determineAcidType(formula) {
   }
 }
 
-/**
- * Classifies an acid by its strength
- * @param {string} formula - Acid formula
- * @returns {string} - Strength category (strong, moderate, weak)
- */
+//Classifies an acid by its strength
 export function classifyAcidByStrength(formula) {
   // Check if it's a known acid
   if (knownAcids[formula]) {
@@ -257,11 +227,7 @@ export function classifyAcidByStrength(formula) {
   return acidCategories.WEAK;
 }
 
-/**
- * Gets the corresponding oxide for an oxyacid
- * @param {string} formula - Acid formula
- * @returns {string|null} - Corresponding oxide formula or null
- */
+//Gets the corresponding oxide for an oxyacid
 export function getCorrespondingOxide(formula) {
   // Check in our mapping
   if (acidOxides[formula]) return acidOxides[formula];
@@ -270,11 +236,7 @@ export function getCorrespondingOxide(formula) {
   return null;
 }
 
-/**
- * Gets the name of the anion formed from an acid
- * @param {string} formula - Acid formula
- * @returns {string|null} - Anion name or null if not recognized
- */
+//Gets the name of the anion formed from an acid
 export function getAnionName(formula) {
   const radical = extractAcidRadical(formula);
   if (radical && anionNames[radical]) {
@@ -283,11 +245,7 @@ export function getAnionName(formula) {
   return null;
 }
 
-/**
- * Comprehensive classification of an acid
- * @param {string} formula - Acid formula
- * @returns {Object|null} - Complete classification or null if not an acid
- */
+//Comprehensive classification of an acid
 export function classifyAcid(formula) {
   // Check if it's an acid first
   if (!isAcid(formula)) return null;

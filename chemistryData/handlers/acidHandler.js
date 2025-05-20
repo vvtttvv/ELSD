@@ -12,29 +12,17 @@ export class AcidHandler {
     // Initialize any required state
   }
 
-  /**
-   * Checks if a compound is an acid
-   * @param {string} formula - Chemical formula to check
-   * @returns {boolean} - True if the formula represents an acid
-   */
+  //Checks if a compound is an acid
   isAcid(formula) {
     return isAcid(formula);
   }
 
-  /**
-   * Gets comprehensive classification of an acid
-   * @param {string} formula - The acid formula to classify
-   * @returns {Object|null} - Classification details or null if not an acid
-   */
+  //Gets comprehensive classification of an acid
   classifyAcid(formula) {
     return classifyAcid(formula);
   }
 
-  /**
-   * Gets a descriptive name for an acid category
-   * @param {string} category - The acid category code
-   * @returns {string} - Human-readable category name
-   */
+  //Gets a descriptive name for an acid category
   getCategoryName(category) {
     const categoryNames = {
       [acidCategories.STRONG]: "Strong Acid",
@@ -50,13 +38,7 @@ export class AcidHandler {
     return categoryNames[category] || "Unknown";
   }
 
-  /**
-   * Determines if a reaction involving an acid is possible
-   * @param {string} formula1 - First compound formula
-   * @param {string} formula2 - Second compound formula
-   * @param {boolean} isConcentrated - Whether the acid is concentrated
-   * @returns {boolean} - Whether the reaction is possible
-   */
+  //Determines if a reaction involving an acid is possible
   canReact(formula1, formula2, isConcentrated = false) {
     // Check if at least one compound is an acid
     if (this.isAcid(formula1)) {
@@ -68,13 +50,7 @@ export class AcidHandler {
     return false;
   }
 
-  /**
-   * Predicts products for a reaction involving an acid
-   * @param {string} formula1 - First compound formula
-   * @param {string} formula2 - Second compound formula
-   * @param {boolean} isConcentrated - Whether the acid is concentrated
-   * @returns {Array|null} - Array of product formulas or null if no reaction
-   */
+  //Predicts products for a reaction involving an acid
   predictProducts(formula1, formula2, isConcentrated = false) {
     // Check if at least one compound is an acid
     if (this.isAcid(formula1)) {
@@ -86,13 +62,7 @@ export class AcidHandler {
     return null;
   }
 
-  /**
-   * Gets detailed information about a reaction involving an acid
-   * @param {string} formula1 - First compound formula
-   * @param {string} formula2 - Second compound formula
-   * @param {boolean} isConcentrated - Whether the acid is concentrated
-   * @returns {Object|null} - Reaction details or null if no reaction
-   */
+  //Gets detailed information about a reaction involving an acid
   getReactionInfo(formula1, formula2, isConcentrated = false) {
     // Check if at least one compound is an acid
     if (this.isAcid(formula1)) {
@@ -107,8 +77,6 @@ export class AcidHandler {
   /**
    * Analyzes a reaction string involving acids
    * @param {string} reactionString - Reaction string in format "A + B -> C + D"
-   * @param {boolean} isConcentrated - Whether to consider concentrated acid reactions
-   * @returns {Object} - Analysis of the reaction including possibility and products
    */
   analyzeReaction(reactionString, isConcentrated = false) {
     // Parse the reaction string
@@ -207,11 +175,7 @@ export class AcidHandler {
     };
   }
 
-  /**
-   * Gets a descriptive name for the acid type
-   * @param {string} formula - Acid formula
-   * @returns {string} - Descriptive type name
-   */
+  //Gets a descriptive name for the acid type
   getAcidTypeName(formula) {
     const acidInfo = classifyAcid(formula);
     if (!acidInfo) return "Not an acid";
@@ -240,11 +204,7 @@ export class AcidHandler {
     return typeName;
   }
 
-  /**
-   * Gets a descriptive name for the reactant type
-   * @param {string} formula - Reactant formula
-   * @returns {string} - Descriptive type name
-   */
+  //Gets a descriptive name for the reactant type
   getReactantTypeName(formula) {
     // Check if it's a metal
     if (isMetal(formula)) {
@@ -276,17 +236,12 @@ export class AcidHandler {
     return "Unknown";
   }
 
-  /**
-   * Compares predicted products with products given in the reaction
-   * @param {Array} predicted - Array of predicted product formulas
-   * @param {Array} given - Array of given product formulas
-   * @returns {boolean} - Whether the products match
-   */
+  //Compares predicted products with products given in the reaction
   compareProducts(predicted, given) {
     if (!predicted || !given) return false;
     if (predicted.length !== given.length) return false;
     
-    // Simple comparison - would need more sophisticated balancing in real implementation
+    // Simple comparison 
     const normalizedPredicted = [...predicted].sort();
     const normalizedGiven = [...given].sort();
     

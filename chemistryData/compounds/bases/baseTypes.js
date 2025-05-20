@@ -9,7 +9,7 @@ export const baseCategories = {
   INSOLUBLE: "insoluble"
 };
 
-// Define known bases by category
+// Known bases by category
 export const knownBases = {
   // Strong, soluble bases (alkali metal hydroxides)
   "LiOH": [baseCategories.STRONG, baseCategories.SOLUBLE],
@@ -45,11 +45,7 @@ export const knownBases = {
   "NH4OH": [baseCategories.WEAK, baseCategories.SOLUBLE]
 };
 
-/**
- * Determines if a formula represents a base (hydroxide compound)
- * @param {string} formula - Chemical formula to check
- * @returns {boolean} - True if the formula represents a base
- */
+//Determines if a formula represents a base (hydroxide compound)
 export function isBase(formula) {
   // Check if formula contains OH group and is not an oxoacid or other non-base
   if (!formula.includes('OH')) return false;
@@ -83,11 +79,7 @@ export function isBase(formula) {
   return false;
 }
 
-/**
- * Extracts the metal element from a base formula
- * @param {string} formula - The base formula
- * @returns {string} - The metal element symbol
- */
+//Extracts the metal element from a base formula
 export function extractMetal(formula) {
   const match = formula.match(/^([A-Z][a-z]?)(?:\d+)?\(?/);
   if (match) {
@@ -96,11 +88,7 @@ export function extractMetal(formula) {
   return null;
 }
 
-/**
- * Determines the number of hydroxide groups in a base
- * @param {string} formula - The base formula
- * @returns {number} - The number of OH groups
- */
+//Determines the number of hydroxide groups in a base
 export function getHydroxideCount(formula) {
   // Simple hydroxides like NaOH
   if (formula.match(/^[A-Z][a-z]?OH$/)) {
@@ -116,11 +104,7 @@ export function getHydroxideCount(formula) {
   return 0;
 }
 
-/**
- * Classifies a base by its strength
- * @param {string} formula - The base formula to classify
- * @returns {string} - The base strength category (strong or weak)
- */
+//Classifies a base by its strength
 export function classifyBaseByStrength(formula) {
   // Check if it's a known base
   if (knownBases[formula]) {
@@ -145,11 +129,8 @@ export function classifyBaseByStrength(formula) {
   return baseCategories.WEAK;
 }
 
-/**
- * Classifies a base by its solubility
- * @param {string} formula - The base formula to classify
- * @returns {string} - The base solubility category (soluble or insoluble)
- */
+//Classifies a base by its solubility
+
 export function classifyBaseBySolubility(formula) {
   // Check if it's a known base
   if (knownBases[formula]) {
@@ -175,11 +156,7 @@ export function classifyBaseBySolubility(formula) {
   return baseCategories.INSOLUBLE;
 }
 
-/**
- * Determines if a base is amphoteric
- * @param {string} formula - The base formula to check
- * @returns {boolean} - True if the base is amphoteric
- */
+//Determines if a base is amphoteric
 export function isAmphotericBase(formula) {
   // Check if it's a known amphoteric base
   if (knownBases[formula] && knownBases[formula][0] === baseCategories.AMPHOTERIC) {
@@ -193,11 +170,7 @@ export function isAmphotericBase(formula) {
   return formsAmphotericOxides(metal);
 }
 
-/**
- * Gets the corresponding oxide for a metal hydroxide
- * @param {string} formula - The base formula
- * @returns {string} - The corresponding oxide formula
- */
+//Gets the corresponding oxide for a metal hydroxide
 export function getCorrespondingOxide(formula) {
   const metal = extractMetal(formula);
   if (!metal) return null;
@@ -221,11 +194,7 @@ export function getCorrespondingOxide(formula) {
   }
 }
 
-/**
- * Comprehensive classification of a base
- * @param {string} formula - The base formula to classify
- * @returns {Object} - Complete classification including strength, solubility, and properties
- */
+//Comprehensive classification of a base
 export function classifyBase(formula) {
   // Check if it's a base first
   if (!isBase(formula)) return null;

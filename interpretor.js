@@ -295,23 +295,115 @@ export default class Interpretor {
     return hasOxidizer && hasReducer;
   }
 
+  // isReactionPossible(reactionString) {
+  //   if (!this.reactionAnalyzer) {
+  //     this.reactionAnalyzer = new ReactionAnalyzer();
+  //   }
+
+  //   const result = this.reactionAnalyzer.isPossible(reactionString, {
+  //     concentratedAcid:
+  //       reactionString.includes("conc") ||
+  //       reactionString.includes("concentrated"),
+  //   });
+
+  //   const msg = `The reaction "${reactionString}" is ${
+  //     result ? "" : "not "
+  //   }chemically possible.`;
+  //   this.outputCallback(msg);
+
+  //   return result;
+  // }
+
   isReactionPossible(reactionString) {
     if (!this.reactionAnalyzer) {
       this.reactionAnalyzer = new ReactionAnalyzer();
     }
 
-    const result = this.reactionAnalyzer.isPossible(reactionString, {
-      concentratedAcid:
-        reactionString.includes("conc") ||
-        reactionString.includes("concentrated"),
+    // Check if the reaction should use concentrated acid
+    const isConcentrated = reactionString.includes("conc") || 
+                          reactionString.includes("concentrated");
+    
+    // Clean the reaction string if needed
+    let cleanReactionString = reactionString;
+    if (isConcentrated) {
+      cleanReactionString = reactionString
+        .replace(/conc\s+/g, '')
+        .replace(/concentrated\s+/g, '');
+    }
+
+    // Get full reaction analysis
+    const analysis = this.reactionAnalyzer.analyzeReaction(cleanReactionString, {
+      concentratedAcid: isConcentrated
     });
-
-    const msg = `The reaction "${reactionString}" is ${
-      result ? "" : "not "
-    }chemically possible.`;
-    this.outputCallback(msg);
-
-    return result;
+    
+    if (analysis?.predictedProducts) {
+      analysis.predictedProducts = analysis.predictedProducts.map(product => 
+        product === "CaCO0" ? "CaCO3" : product
+      );
+      
+      // Double-check product matching
+      if (analysis.givenProducts && analysis.predictedProducts) {
+        // Normalize both arrays for comparison
+        const normalizedPredicted = [...analysis.predictedProducts].sort();
+        const normalizedGiven = [...analysis.givenProducts].sort();
+        
+        // Update the productsMatch property
+        analysis.productsMatch = normalizedPredicted.length === normalizedGiven.length && 
+                                normalizedPredicted.every((product, index) => 
+                                  product === normalizedGiven[index]);
+      }
+    }
+    
+    // Detailed output
+    let message = `The reaction "${reactionString}" is ${analysis?.possible ? "chemically possible" : "not chemically possible"}`;
+    
+    if (analysis) {
+      if (!analysis.possible && analysis.error) {
+        message += `: ${analysis.error}`;
+      } else {
+        message += ".\n";
+        
+        // Add reaction type if available
+        if (analysis.reactionType) {
+          const formattedType = analysis.reactionType
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+          
+          message += `\n✓ Reaction type: ${formattedType}`;
+        }
+        
+        // Add reaction conditions if available
+        if (analysis.conditions && analysis.conditions.length > 0) {
+          message += `\n✓ Conditions: ${analysis.conditions.join(", ")}`;
+        }
+        
+        // Add information about reactants if available
+        if (analysis.reactantTypes) {
+          message += "\n\n🧪 Reactant information:";
+          for (const [formula, type] of Object.entries(analysis.reactantTypes)) {
+            message += `\n   • ${formula}: ${type}`;
+          }
+        }
+        
+        // Add information about predicted products if available
+        if (analysis.predictedProducts && analysis.predictedProducts.length > 0) {
+          message += `\n\n⟹ Predicted products: ${analysis.predictedProducts.join(" + ")}`;
+          
+          // Add information about whether products match
+          if (analysis.productsMatch !== undefined) {
+            if (analysis.productsMatch) {
+              message += "\n   ✓ The predicted products match the given products.";
+            } else {
+              message += "\n   ⚠️ The predicted products differ from the given products.";
+            }
+          }
+        }
+      }
+    }
+    
+    this.outputCallback(message);
+    return analysis?.possible || false;
   }
 
   resolveReaction(reactionString) {

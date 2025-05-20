@@ -132,7 +132,7 @@ export const baseReactions = {
         
         // Reactions with halogens
         if (nonmetal === "Cl2") {
-          // 2KOH + Cl2 → KCl + KClO + H2O
+          // KOH + Cl2 → KCl + KClO + H2O
           return [`${metal}Cl`, `${metal}ClO`, "H2O"];
         }
         
@@ -292,12 +292,7 @@ export const baseReactions = {
   }
 };
 
-/**
- * Determines if a reaction involving a base is possible
- * @param {string} base - Base formula
- * @param {string} reactant - Reactant formula
- * @returns {boolean} - Whether the reaction is possible
- */
+//Determines if a reaction involving a base is possible
 export function canReact(base, reactant) {
   // Determine the base category
   const baseStrength = classifyBaseByStrength(base);
@@ -352,12 +347,7 @@ export function canReact(base, reactant) {
   return false;
 }
 
-/**
- * Predicts the products of a reaction involving a base
- * @param {string} base - Base formula
- * @param {string} reactant - Reactant formula
- * @returns {Array|null} - Array of product formulas or null if no reaction
- */
+//Predicts the products of a reaction involving a base
 export function predictProducts(base, reactant) {
   // First check if the reaction is possible
   if (!canReact(base, reactant)) {
@@ -423,12 +413,7 @@ export function predictProducts(base, reactant) {
   return null;
 }
 
-/**
- * Gets information about a reaction involving a base
- * @param {string} base - Base formula
- * @param {string} reactant - Reactant formula
- * @returns {Object|null} - Information about the reaction or null if not possible
- */
+//Gets information about a reaction involving a base
 export function getReactionInfo(base, reactant) {
   // First check if the reaction is possible
   if (!canReact(base, reactant)) {

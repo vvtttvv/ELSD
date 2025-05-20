@@ -441,12 +441,7 @@ export const oxideReactions = {
   }
 };
 
-/**
- * Determines if a reaction between two compounds is possible based on oxide reactivity rules
- * @param {string} compound1 - First compound formula
- * @param {string} compound2 - Second compound formula
- * @returns {boolean} - Whether the reaction is possible
- */
+//Determines if a reaction between two compounds is possible based on oxide reactivity rules
   export function canReact(compound1, compound2) {
     // Determine if either compound is an oxide
     const isCompound1Oxide = classifyOxide(compound1) !== null;
@@ -537,12 +532,7 @@ export const oxideReactions = {
     return false;
   }
 
-/**
- * Predicts the products of a reaction involving oxides
- * @param {string} compound1 - First compound formula
- * @param {string} compound2 - Second compound formula
- * @returns {Array} - Array of product formulas or null if no reaction
- */
+//Predicts the products of a reaction involving oxides
 export function predictProducts(compound1, compound2) {
   // First check if the reaction is possible
   if (!canReact(compound1, compound2)) {
@@ -600,22 +590,13 @@ export function predictProducts(compound1, compound2) {
   return null;
 }
 
-/**
- * Helper function to find the least common multiple of two numbers
- * @param {number} a - First number
- * @param {number} b - Second number
- * @returns {number} - The LCM of a and b
- */
+//Helper function to find the least common multiple of two numbers
+
 function leastCommonMultiple(a, b) {
   return (a * b) / greatestCommonDivisor(a, b);
 }
 
-/**
- * Helper function to find the greatest common divisor of two numbers
- * @param {number} a - First number
- * @param {number} b - Second number
- * @returns {number} - The GCD of a and b
- */
+//Helper function to find the greatest common divisor of two numbers
 function greatestCommonDivisor(a, b) {
   while (b !== 0) {
     const temp = b;
@@ -625,12 +606,8 @@ function greatestCommonDivisor(a, b) {
   return a;
 }
 
-/**
- * Helper function to extract a salt formula from a reaction between an oxide and an acid
- * @param {string} oxide - Oxide formula
- * @param {string} acid - Acid formula
- * @returns {string} - Salt formula
- */
+//Helper function to extract a salt formula from a reaction between an oxide and an acid
+
 function extractSalt(oxide, acid) {
   const metal = extractMainElement(oxide);
   const { anion } = extractIons(acid);
