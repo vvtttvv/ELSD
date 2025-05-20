@@ -13,6 +13,7 @@ export class ReactionAnalyzer {
     this.oxideHandler = new OxideHandler();
     this.baseHandler = new BaseHandler();
     this.acidHandler = new AcidHandler();
+    this.acidHandler.baseHandler = this.baseHandler;
     this.saltHandler = new SaltHandler();
   }
 
@@ -207,7 +208,7 @@ isPossible(reactionString, options = {}) {
     
     return message;
   }
-  
+
   setOutputCallback(callback) {
     this.outputCallback = callback;
   }

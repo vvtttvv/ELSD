@@ -1,9 +1,8 @@
 import { acidCategories, classifyAcidByStrength, determineBasicity, determineAcidType, extractAcidRadical } from './acidTypes.js';
-import { baseCategories, classifyBaseByStrength } from '../bases/baseTypes.js';
 import { oxideCategories, classifyOxide } from '../oxides/oxideTypes.js';
 import { extractIons } from '../../core/extractIons.js';
 import { isMetal } from '../../core/elements.js';
-
+import { isBase } from '../bases/baseTypes.js';
 /**
  * Reaction patterns for acids with different reactants
  * Each rule defines whether a reaction is possible and what products would form
@@ -324,15 +323,13 @@ export function canReact(acid, reactant, isConcentrated = false) {
     return acidReactions[acidStrength]["metal"].possible(acid, reactant);
   }
   
-  // Check if reactant is an oxide
+  if (isBase(reactant)) {
+    return acidReactions[acidStrength]["base"].possible;
+  }
+
   const oxideType = classifyOxide(reactant);
   if (oxideType) {
     return acidReactions[acidStrength][oxideType]?.possible || false;
-  }
-  
-  // Check if reactant is a base
-  if (reactant.includes('OH')) {
-    return acidReactions[acidStrength]["base"].possible;
   }
   
   // Check for salt (simple detection - not comprehensive)
@@ -371,17 +368,17 @@ export function predictProducts(acid, reactant, isConcentrated = false) {
     return acidReactions[acidStrength]["metal"].products(acid, reactant);
   }
   
+  // Check if reactant is a base
+  if (isBase(reactant)) {
+    return acidReactions[acidStrength]["base"].products(acid, reactant);
+  }
+
   // Check if reactant is an oxide
   const oxideType = classifyOxide(reactant);
   if (oxideType && acidReactions[acidStrength][oxideType]) {
     return acidReactions[acidStrength][oxideType].products(acid, reactant);
   }
-  
-  // Check if reactant is a base
-  if (reactant.includes('OH')) {
-    return acidReactions[acidStrength]["base"].products(acid, reactant);
-  }
-  
+
   // Check for salt
   if (!reactant.startsWith('H') && !reactant.includes('OH') && 
       !reactant.match(/^[A-Z][a-z]?$/)) { // Not a single element
@@ -432,22 +429,20 @@ export function getReactionInfo(acid, reactant, isConcentrated = false) {
     reactantType = "metal";
     reactionDetails = acidReactions[acidStrength]["metal"];
   }
-  
-  // Check if reactant is an oxide
-  const oxideType = classifyOxide(reactant);
-  // console.log("[acidReactivity] Checking oxide classification...");
-  // console.log("Reactant:", reactant);
-  // console.log("Classified oxide type:", oxideType);
 
-  if (oxideType) {
-    reactantType = `${oxideType} oxide`;
-    reactionDetails = acidReactions[acidStrength][oxideType];
-  }
-  
-  // Check if reactant is a base
-  if (reactant.includes('OH')) {
+  // Check if reactant is a base (before oxide!)
+  else if (isBase(reactant)) {
     reactantType = "base";
     reactionDetails = acidReactions[acidStrength]["base"];
+  }
+
+  // Then check if reactant is an oxide
+  else {
+    const oxideType = classifyOxide(reactant);
+    if (oxideType) {
+      reactantType = `${oxideType} oxide`;
+      reactionDetails = acidReactions[acidStrength][oxideType];
+    }
   }
   
   // Check for salt

@@ -210,31 +210,27 @@ export class AcidHandler {
     if (isMetal(formula)) {
       return "Metal";
     }
-    
-    // Check if it's an oxide
+
+    // Check if it's a base BEFORE oxide
+    if (this.baseHandler && this.baseHandler.isBase(formula)) {
+      return this.baseHandler.getBaseTypeName(formula);
+    }
+
+    // Now check if it's an oxide
     const oxideType = classifyOxide(formula);
     if (oxideType) {
       return `${oxideType.charAt(0).toUpperCase() + oxideType.slice(1)} Oxide`;
     }
-    
-    // Check if it's a base (simple check)
-    if (formula.includes('OH')) {
-      return "Base";
-    }
-    
+
     // Check if it's water
     if (formula === "H2O") {
       return "Water";
     }
-    
-    // Check if it's a salt (simple check)
-    if (!formula.startsWith('H') && !formula.includes('OH') && 
-        formula.match(/[A-Z][a-z]?[A-Z]/)) {
-      return "Salt";
-    }
-    
-    return "Unknown";
+
+    // Fallback
+    return "Unknown Compound";
   }
+
 
   //Compares predicted products with products given in the reaction
   compareProducts(predicted, given) {
