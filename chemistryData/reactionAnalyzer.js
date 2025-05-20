@@ -17,15 +17,28 @@ export class ReactionAnalyzer {
   }
 
   /**
-   * Determines if a reaction is possible
-   * @param {string} reactionString - Reaction string in format "A + B -> C + D"
-   * @param {Object} options - Additional options (like concentrated acid)
-   * @returns {boolean} - Whether the reaction is possible
-   */
-  isPossible(reactionString, options = {}) {
+ * Determines if a reaction is possible
+ * @param {string} reactionString - Reaction string in format "A + B -> C + D"
+ * @param {Object} options - Additional options (like concentrated acid)
+ * @returns {boolean} - Whether the reaction is possible
+ */
+isPossible(reactionString, options = {}) {
+  console.log("isPossible() called with:", reactionString);
+  
+  try {
+    // Validate reaction string format
+    if (!reactionString || typeof reactionString !== 'string') {
+      console.warn("Invalid reaction string provided");
+      return false;
+    }
+    
     const analysis = this.analyzeReaction(reactionString, options);
-    return analysis.possible || false;
+    return analysis && analysis.possible || false;
+  } catch (error) {
+    console.error("Error in isPossible():", error.message);
+    return false;
   }
+}
 
   /**
    * Analyzes a reaction string by trying all handlers until one returns a possible match

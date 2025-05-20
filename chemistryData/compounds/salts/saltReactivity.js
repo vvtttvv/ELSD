@@ -15,8 +15,16 @@ export const saltReactions = {
     // Salt + Metal -> New salt + New metal (single replacement)
     "metal": {
       possible: (salt, metal) => {
+        console.log("[saltReactivity] Checking metal reaction possibility");
+        console.log("Salt:", salt, "Metal:", metal);
+        
         const { cation } = extractSaltComponents(salt);
-        if (!cation || !metal) return false;
+        console.log("Extracted cation from salt:", cation);
+        
+        if (!cation || !metal) {
+          console.log("Missing cation or metal");
+          return false;
+        }
         
         // Only possible if the metal is more reactive than the salt's cation
         // Activity series (simplified): K > Na > Ca > Mg > Al > Zn > Fe > Pb > H > Cu > Ag > Au
@@ -25,8 +33,12 @@ export const saltReactions = {
         const metalIndex = activitySeries.indexOf(metal);
         const cationIndex = activitySeries.indexOf(cation);
         
+        console.log(`Metal (${metal}) index: ${metalIndex}, Cation (${cation}) index: ${cationIndex}`);
+        
         // Metal must be higher in the activity series (more reactive)
-        return metalIndex >= 0 && cationIndex >= 0 && metalIndex < cationIndex;
+        const result = metalIndex >= 0 && cationIndex >= 0 && metalIndex < cationIndex;
+        console.log("Metal replacement possible:", result);
+        return result;
       },
       products: (salt, metal) => {
         const { cation, anion } = extractSaltComponents(salt);
@@ -373,36 +385,141 @@ export const saltReactions = {
  * @param {string} reactant - Reactant formula
  * @returns {boolean} - Whether the reaction is possible
  */
-export function canReact(salt, reactant) {
-  // Determine the salt category
-  const saltType = classifySaltByType(salt);
-  if (!saltType || !saltReactions[saltType]) return false;
-
+// export function canReact(salt, reactant) {
+//   // Determine the salt category
+//   const saltType = classifySaltByType(salt);
   
-  // Check if reactant is a metal
-  if (isMetal(reactant)) {
-    return saltReactions[saltType]["metal"]?.possible?.(salt, reactant) || false;
+//   // Check if reactant is a metal
+//   if (isMetal(reactant)) {
+//     return saltReactions[saltType]["metal"]?.possible?.(salt, reactant) || false;
+//   }
+  
+//   // Check if reactant is an acid
+//   if (reactant.startsWith('H') && !reactant.startsWith('H2O')) {
+//     return saltReactions[saltType]["acid"]?.possible?.(salt, reactant) || false;
+//   }
+  
+//   // Check if reactant is a base
+//   if (reactant.includes('OH')) {
+//     return saltReactions[saltType]["base"]?.possible?.(salt, reactant) || false;
+//   }
+  
+//   // Check if reactant is another salt
+//   if (!reactant.startsWith('H') && !reactant.includes('OH') && 
+//       !reactant.match(/^[A-Z][a-z]?$/) && !reactant.includes('O')) {
+//     return saltReactions[saltType]["salt"]?.possible?.(salt, reactant) || false;
+//   }
+  
+//   // For thermal decomposition (special case)
+//   if (reactant === "heat") {
+//     return saltReactions[saltType]["heat"]?.possible?.(salt) || false;
+//   }
+  
+//   return false;
+// }
+
+
+/**
+ * Determines if a reaction involving a salt is possible
+ * @param {string} salt - Salt formula
+ * @param {string} reactant - Reactant formula
+ * @returns {boolean} - Whether the reaction is possible
+ */
+export function canReact(salt, reactant) {
+  console.log(`Checking reaction possibility for ${salt} + ${reactant}`);
+  
+  if (!salt || typeof salt !== 'string') {
+    console.warn("Invalid salt parameter:", salt);
+    return false;
+  }
+  
+  if (!reactant || typeof reactant !== 'string') {
+    console.warn("Invalid reactant parameter:", reactant);
+    return false;
+  }
+  
+  // Determine the salt category 
+  let saltType;
+  try {
+    saltType = classifySaltByType(salt);
+    if (!saltType) {
+      console.warn(`Cannot classify salt type for ${salt}`);
+      return false;
+    }
+  } catch (err) {
+    console.warn(`Error classifying salt ${salt}:`, err.message);
+    return false;
+  }
+  
+  // Check if reactant is a metal 
+  try {
+    if (isMetal(reactant)) {
+      if (!saltReactions[saltType] || !saltReactions[saltType]["metal"] || !saltReactions[saltType]["metal"].possible) {
+        console.warn(`No reaction definition for ${saltType} salt with metal`);
+        return false;
+      }
+      return saltReactions[saltType]["metal"].possible(salt, reactant) || false;
+    }
+  } catch (err) {
+    console.warn(`Error checking metal reaction for ${salt} + ${reactant}:`, err.message);
+    return false;
   }
   
   // Check if reactant is an acid
   if (reactant.startsWith('H') && !reactant.startsWith('H2O')) {
-    return saltReactions[saltType]["acid"]?.possible?.(salt, reactant) || false;
+    if (!saltReactions[saltType] || !saltReactions[saltType]["acid"] || !saltReactions[saltType]["acid"].possible) {
+      return false;
+    }
+    
+    try {
+      return saltReactions[saltType]["acid"].possible(salt, reactant) || false;
+    } catch (err) {
+      console.warn(`Error checking acid reaction:`, err.message);
+      return false;
+    }
   }
   
   // Check if reactant is a base
   if (reactant.includes('OH')) {
-    return saltReactions[saltType]["base"]?.possible?.(salt, reactant) || false;
+    if (!saltReactions[saltType] || !saltReactions[saltType]["base"] || !saltReactions[saltType]["base"].possible) {
+      return false;
+    }
+    
+    try {
+      return saltReactions[saltType]["base"].possible(salt, reactant) || false;
+    } catch (err) {
+      console.warn(`Error checking base reaction:`, err.message);
+      return false;
+    }
   }
   
   // Check if reactant is another salt
   if (!reactant.startsWith('H') && !reactant.includes('OH') && 
       !reactant.match(/^[A-Z][a-z]?$/) && !reactant.includes('O')) {
-    return saltReactions[saltType]["salt"]?.possible?.(salt, reactant) || false;
+    if (!saltReactions[saltType] || !saltReactions[saltType]["salt"] || !saltReactions[saltType]["salt"].possible) {
+      return false;
+    }
+    
+    try {
+      return saltReactions[saltType]["salt"].possible(salt, reactant) || false;
+    } catch (err) {
+      console.warn(`Error checking salt-salt reaction:`, err.message);
+      return false;
+    }
   }
   
   // For thermal decomposition (special case)
   if (reactant === "heat") {
-    return saltReactions[saltType]["heat"]?.possible?.(salt) || false;
+    if (!saltReactions[saltType] || !saltReactions[saltType]["heat"] || !saltReactions[saltType]["heat"].possible) {
+      return false;
+    }
+    
+    try {
+      return saltReactions[saltType]["heat"].possible(salt) || false;
+    } catch (err) {
+      console.warn(`Error checking thermal decomposition:`, err.message);
+      return false;
+    }
   }
   
   return false;
@@ -422,7 +539,6 @@ export function predictProducts(salt, reactant) {
   
   // Determine the salt category
   const saltType = classifySaltByType(salt);
-  if (!saltType || !saltReactions[saltType]) return false;
   
   // Check if reactant is a metal
   if (isMetal(reactant)) {
@@ -467,7 +583,6 @@ export function getReactionInfo(salt, reactant) {
   
   // Determine the salt category and reaction details
   const saltType = classifySaltByType(salt);
-  if (!saltType || !saltReactions[saltType]) return false;
   let reactantType;
   let reactionDetails;
   

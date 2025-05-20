@@ -253,7 +253,8 @@ export function getCorrespondingAcid(formula) {
     "P2O3": "H3PO3",   // Phosphorus trioxide → Phosphorous acid
     "Cl2O": "HClO",    // Dichlorine monoxide → Hypochlorous acid
     "Cl2O7": "HClO4",  // Dichlorine heptoxide → Perchloric acid
-    "B2O3": "H3BO3"    // Diboron trioxide → Boric acid
+    "B2O3": "H3BO3",    // Diboron trioxide → Boric acid
+    "SiO2": "H2SiO3"    // Silicon dioxide → Silicic acid (added for completeness)
   };
   
   return acidMap[formula] || null;

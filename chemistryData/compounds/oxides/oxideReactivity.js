@@ -239,7 +239,6 @@ export const oxideReactions = {
     // Acidic Oxide + Water -> Acid (with exceptions like SiO2)
     "H2O": {
       possible: (oxide) => {
-        // Some acidic oxides like SiO2 don't react with water
         const nonReactiveWithWater = ["SiO2"];
         return !nonReactiveWithWater.includes(oxide);
       },
@@ -448,63 +447,95 @@ export const oxideReactions = {
  * @param {string} compound2 - Second compound formula
  * @returns {boolean} - Whether the reaction is possible
  */
-export function canReact(compound1, compound2) {
-  // Determine if either compound is an oxide
-  const isCompound1Oxide = classifyOxide(compound1) !== null;
-  const isCompound2Oxide = classifyOxide(compound2) !== null;
-  
-  // If neither is an oxide, this module can't determine reactivity
-  if (!isCompound1Oxide && !isCompound2Oxide) {
-    return null;
-  }
-  
-  // If one is an oxide and the other is water
-  if (isCompound1Oxide && compound2 === "H2O") {
-    const oxideType = classifyOxide(compound1);
-    return oxideReactions[oxideType]["H2O"].possible;
-  }
-  
-  if (isCompound2Oxide && compound1 === "H2O") {
-    const oxideType = classifyOxide(compound2);
-    return oxideReactions[oxideType]["H2O"].possible;
-  }
-  
-  // If both are oxides
-  if (isCompound1Oxide && isCompound2Oxide) {
-    const oxide1Type = classifyOxide(compound1);
-    const oxide2Type = classifyOxide(compound2);
+  export function canReact(compound1, compound2) {
+    // Determine if either compound is an oxide
+    const isCompound1Oxide = classifyOxide(compound1) !== null;
+    const isCompound2Oxide = classifyOxide(compound2) !== null;
     
-    return oxideReactions[oxide1Type][oxide2Type].possible;
+    // If neither is an oxide, this module can't determine reactivity
+    if (!isCompound1Oxide && !isCompound2Oxide) {
+      return false; 
+    }
+    
+    // If one is an oxide and the other is water
+    if (isCompound1Oxide && compound2 === "H2O") {
+      const oxideType = classifyOxide(compound1);
+      const possibleValue = oxideReactions[oxideType]["H2O"].possible;
+      
+      // Check if possible is a function and execute it if so
+      if (typeof possibleValue === 'function') {
+        return possibleValue(compound1);
+      }
+      return possibleValue;
+    }
+    
+    if (isCompound2Oxide && compound1 === "H2O") {
+      const oxideType = classifyOxide(compound2);
+      const possibleValue = oxideReactions[oxideType]["H2O"].possible;
+      
+      // Check if possible is a function and execute it if so
+      if (typeof possibleValue === 'function') {
+        return possibleValue(compound2);
+      }
+      return possibleValue;
+    }
+    
+    // If both are oxides
+    if (isCompound1Oxide && isCompound2Oxide) {
+      const oxide1Type = classifyOxide(compound1);
+      const oxide2Type = classifyOxide(compound2);
+      
+      const possibleValue = oxideReactions[oxide1Type][oxide2Type].possible;
+      // Check if possible is a function and execute it if so
+      if (typeof possibleValue === 'function') {
+        return possibleValue(compound1, compound2);
+      }
+      return possibleValue;
+    }
+    
+    // Handle oxide + acid or base reactions
+    if (isCompound1Oxide) {
+      const oxideType = classifyOxide(compound1);
+      // Simple check if compound2 is an acid (contains H in front)
+      if (compound2.startsWith("H") && !compound2.startsWith("H2O")) {
+        const possibleValue = oxideReactions[oxideType]["acid"].possible;
+        if (typeof possibleValue === 'function') {
+          return possibleValue(compound1, compound2);
+        }
+        return possibleValue;
+      }
+      // Simple check if compound2 is a base (contains OH)
+      if (compound2.includes("OH")) {
+        const possibleValue = oxideReactions[oxideType]["base"].possible;
+        if (typeof possibleValue === 'function') {
+          return possibleValue(compound1, compound2);
+        }
+        return possibleValue;
+      }
+    }
+    
+    if (isCompound2Oxide) {
+      const oxideType = classifyOxide(compound2);
+      // Simple check if compound1 is an acid (contains H in front)
+      if (compound1.startsWith("H") && !compound1.startsWith("H2O")) {
+        const possibleValue = oxideReactions[oxideType]["acid"].possible;
+        if (typeof possibleValue === 'function') {
+          return possibleValue(compound2, compound1);
+        }
+        return possibleValue;
+      }
+      // Simple check if compound1 is a base (contains OH)
+      if (compound1.includes("OH")) {
+        const possibleValue = oxideReactions[oxideType]["base"].possible;
+        if (typeof possibleValue === 'function') {
+          return possibleValue(compound2, compound1);
+        }
+        return possibleValue;
+      }
+    }
+    
+    return false;
   }
-  
-  // Handle oxide + acid or base reactions
-  // This is a simplification - would need more logic for full acid/base recognition
-  if (isCompound1Oxide) {
-    const oxideType = classifyOxide(compound1);
-    // Simple check if compound2 is an acid (contains H in front)
-    if (compound2.startsWith("H")) {
-      return oxideReactions[oxideType]["acid"].possible;
-    }
-    // Simple check if compound2 is a base (contains OH)
-    if (compound2.includes("OH")) {
-      return oxideReactions[oxideType]["base"].possible;
-    }
-  }
-  
-  if (isCompound2Oxide) {
-    const oxideType = classifyOxide(compound2);
-    // Simple check if compound1 is an acid (contains H in front)
-    if (compound1.startsWith("H")) {
-      return oxideReactions[oxideType]["acid"].possible;
-    }
-    // Simple check if compound1 is a base (contains OH)
-    if (compound1.includes("OH")) {
-      return oxideReactions[oxideType]["base"].possible;
-    }
-  }
-  
-  return false;
-}
 
 /**
  * Predicts the products of a reaction involving oxides

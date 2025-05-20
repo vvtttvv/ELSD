@@ -108,7 +108,8 @@ export class SaltHandler {
    * @returns {Object} - Analysis of the reaction including possibility and products
    */
   analyzeReaction(reactionString) {
-    // Parse the reaction string
+    console.log("SaltHandler analyzing reaction:", reactionString);
+
     const parts = reactionString.split("->");
     if (parts.length !== 2) {
       return { valid: false, error: "Invalid reaction format" };
@@ -117,7 +118,6 @@ export class SaltHandler {
     const reactants = parts[0].split("+").map(r => r.trim());
     const givenProducts = parts[1].split("+").map(p => p.trim());
     
-    // Check if any reactant is a salt
     const saltIndex = reactants.findIndex(r => this.isSalt(r));
     if (saltIndex === -1) {
       return { 
@@ -128,34 +128,41 @@ export class SaltHandler {
       };
     }
     
-    // For single reactant (decomposition with heat)
     if (reactants.length === 1) {
       const saltFormula = reactants[0];
       
-      // Check for thermal decomposition
-      const decompositionInfo = getReactionInfo(saltFormula, "heat");
-      if (!decompositionInfo) {
+      try {
+        const decompositionInfo = getReactionInfo(saltFormula, "heat");
+        if (!decompositionInfo) {
+          return {
+            valid: false,
+            error: "This salt does not undergo thermal decomposition",
+            reactants,
+            givenProducts
+          };
+        }
+        
+        return {
+          valid: true,
+          possible: true,
+          reactants,
+          givenProducts,
+          predictedProducts: decompositionInfo.products,
+          reactionType: decompositionInfo.reactionType,
+          conditions: decompositionInfo.conditions,
+          productsMatch: this.compareProducts(decompositionInfo.products, givenProducts)
+        };
+      } catch (err) {
+        console.warn("Decomposition analysis error:", err.message);
         return {
           valid: false,
-          error: "This salt does not undergo thermal decomposition",
+          error: `Error analyzing decomposition reaction: ${err.message}`,
           reactants,
           givenProducts
         };
       }
-      
-      return {
-        valid: true,
-        possible: true,
-        reactants,
-        givenProducts,
-        predictedProducts: decompositionInfo.products,
-        reactionType: decompositionInfo.reactionType,
-        conditions: decompositionInfo.conditions,
-        productsMatch: this.compareProducts(decompositionInfo.products, givenProducts)
-      };
     }
     
-    // For binary reactions
     if (reactants.length === 2) {
       const saltIndex = reactants.findIndex(r => this.isSalt(r));
       const otherIndex = saltIndex === 0 ? 1 : 0;
@@ -163,39 +170,48 @@ export class SaltHandler {
       const saltFormula = reactants[saltIndex];
       const otherFormula = reactants[otherIndex];
       
-      const reactionInfo = getReactionInfo(saltFormula, otherFormula);
-      
-      if (!reactionInfo) {
+      try {
+        const reactionInfo = getReactionInfo(saltFormula, otherFormula);
+        
+        if (!reactionInfo) {
+          return {
+            valid: false,
+            possible: false,
+            error: "No reaction occurs between these compounds",
+            reactants,
+            givenProducts,
+            reactantTypes: {
+              [saltFormula]: this.getSaltTypeName(saltFormula),
+              [otherFormula]: this.getReactantTypeName(otherFormula)
+            }
+          };
+        }
+        
         return {
-          valid: false,
-          possible: false,
-          error: "No reaction occurs between these compounds",
+          valid: true,
+          possible: true,
           reactants,
           givenProducts,
+          predictedProducts: reactionInfo.products,
+          reactionType: reactionInfo.reactionType,
+          conditions: reactionInfo.conditions,
           reactantTypes: {
             [saltFormula]: this.getSaltTypeName(saltFormula),
             [otherFormula]: this.getReactantTypeName(otherFormula)
-          }
+          },
+          productsMatch: this.compareProducts(reactionInfo.products, givenProducts)
+        };
+      } catch (err) {
+        console.warn("Handler error in SaltHandler:", err.message);
+        return {
+          valid: false,
+          error: `Analysis error: ${err.message}`,
+          reactants,
+          givenProducts
         };
       }
-      
-      return {
-        valid: true,
-        possible: true,
-        reactants,
-        givenProducts,
-        predictedProducts: reactionInfo.products,
-        reactionType: reactionInfo.reactionType,
-        conditions: reactionInfo.conditions,
-        reactantTypes: {
-          [saltFormula]: this.getSaltTypeName(saltFormula),
-          [otherFormula]: this.getReactantTypeName(otherFormula)
-        },
-        productsMatch: this.compareProducts(reactionInfo.products, givenProducts)
-      };
     }
     
-    // More complex reactions not yet supported
     return {
       valid: false,
       error: "Complex reactions with more than 2 reactants not yet supported",

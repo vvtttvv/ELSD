@@ -2,7 +2,42 @@ import { elementValences } from '../../core/valences.js';
 import { isMetal, isNonMetal } from '../../core/elements.js';
 import { extractIons } from '../../core/extractIons.js';
 import { solubilityTable } from '../../core/solubilityTable.js';
-import { acidRadicals, anionNames } from '../acids/acidTypes.js';
+
+const acidRadicals = {
+  "HCl": "Cl",
+  "HNO3": "NO3", 
+  "H2SO4": "SO4",
+  "H2CO3": "CO3",
+  "H3PO4": "PO4",
+  "HBr": "Br",
+  "HI": "I",
+  "HF": "F",
+  "H2S": "S",
+  "HNO2": "NO2",
+  "H2SO3": "SO3",
+  "HClO": "ClO",
+  "HClO2": "ClO2",
+  "HClO3": "ClO3",
+  "HClO4": "ClO4"
+};
+
+const anionNames = {
+  "Cl": "chloride",
+  "NO3": "nitrate",
+  "SO4": "sulfate", 
+  "CO3": "carbonate",
+  "PO4": "phosphate",
+  "Br": "bromide",
+  "I": "iodide",
+  "F": "fluoride",
+  "S": "sulfide",
+  "NO2": "nitrite",
+  "SO3": "sulfite",
+  "ClO": "hypochlorite",
+  "ClO2": "chlorite",
+  "ClO3": "chlorate",
+  "ClO4": "perchlorate"
+};
 
 export const saltCategories = {
   NORMAL: "normal",
@@ -45,6 +80,10 @@ export const knownSalts = {
   "Ca(ClO)2": [saltCategories.NORMAL, saltCategories.SOLUBLE],
   "Ca(ClO3)2": [saltCategories.NORMAL, saltCategories.SOLUBLE],
   "Ca(MnO4)2": [saltCategories.NORMAL, saltCategories.SOLUBLE],
+  "CuSO4": [saltCategories.NORMAL, saltCategories.SOLUBLE],
+  "ZnSO4": [saltCategories.NORMAL, saltCategories.SOLUBLE],
+  "FeSO4": [saltCategories.NORMAL, saltCategories.SOLUBLE],
+  "Fe2(SO4)3": [saltCategories.NORMAL, saltCategories.SOLUBLE],
   
   // Acidic salts (from partial neutralization of polyprotic acids)
   "NaHSO4": [saltCategories.ACIDIC, saltCategories.SOLUBLE],
@@ -86,14 +125,16 @@ export function isSalt(formula) {
   // Pattern 1: Metal + non-metal/polyatomic ion
   const { cation, anion } = extractIons(formula);
   if (cation && anion) {
+    // Check if cation is a metal (or ammonium)
     if (isMetal(cation) || cation === 'NH4') {
-      const acidAnions = Object.values(acidRadicals);
-      if (acidAnions.includes(anion)) {
-        return true;
+      // Check if anion is a recognized acid radical
+      for (const radical in acidRadicals) {
+        if (formula.includes(acidRadicals[radical])) {
+          return true;
+        }
       }
     }
   }
-
   
   // Pattern 2: Contains both metal and non-metal/polyatomic ion but not H, OH
   if (formula.match(/[A-Z]/) && 
@@ -243,16 +284,27 @@ export function classifySaltByType(formula) {
   }
   
   // Double salts: have two different cations
-  // This is a simplification - would need more sophisticated parsing
   const doubleSaltPattern = /\([A-Z][a-z]?[A-Z][a-z]?\)/;
   if (doubleSaltPattern.test(formula)) {
     return saltCategories.DOUBLE;
   }
   
   // Mixed salts: have two different anions
-  // This is also a simplification
-  const mixedSaltPattern = /[A-Z][a-z]?[A-Z][a-z]?[A-Z]/;
-  if (mixedSaltPattern.test(formula) && !formula.includes('(')) {
+  const commonAnions = ['SO4', 'NO3', 'CO3', 'PO4', 'ClO4', 'ClO3'];
+  let isMixed = false;
+  
+  // Check if formula contains common anion patterns
+  if (formula.includes('SO4') || formula.includes('NO3') || 
+      formula.includes('CO3') || formula.includes('PO4')) {
+    // These are normal salts with polyatomic ions, not mixed salts
+    isMixed = false;
+  } else {
+    // More specific check for truly mixed salts (with two different anions)
+    const mixedSaltPattern = /[A-Z][a-z]?[A-Z][a-z]?[A-Z]/;
+    isMixed = mixedSaltPattern.test(formula) && !formula.includes('(');
+  }
+  
+  if (isMixed) {
     return saltCategories.MIXED;
   }
   
@@ -275,7 +327,6 @@ export function classifySalt(formula) {
   const pH = determineSaltpH(formula);
   
   let anionName = "";
-  // Try to find anion name
   for (const acid in acidRadicals) {
     if (acidRadicals[acid] === anion) {
       anionName = anionNames[anion] || "";
