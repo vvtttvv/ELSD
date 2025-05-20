@@ -3,6 +3,9 @@ import { oxideCategories, classifyOxide } from '../oxides/oxideTypes.js';
 import { extractIons } from '../../core/extractIons.js';
 import { isMetal } from '../../core/elements.js';
 import { isBase } from '../bases/baseTypes.js';
+import { balanceSaltFormula } from '../../core/valences.js';
+import { extractMetalFromOxide } from '../../core/utils.js';
+
 /**
  * Reaction patterns for acids with different reactants
  * Each rule defines whether a reaction is possible and what products would form
@@ -21,14 +24,9 @@ export const acidReactions = {
         const basicity = determineBasicity(acid);
         
         // Determine the formula of the salt
-        let salt;
-        if (basicity === 1) {
-          salt = `${metal}${radical}`; // For HCl + Zn → ZnCl2
-        } else if (basicity === 2) {
-          salt = `${metal}${radical}`; // For H2SO4 + Zn → ZnSO4
-        } else {
-          salt = `${metal}${radical}`;
-        }
+        const salt = balanceSaltFormula(metal, radical);
+        console.log("Building salt from:", metal, "+", radical);
+        console.log("→ Result:", salt);
         
         return [salt, "H2"];
       },
@@ -41,18 +39,13 @@ export const acidReactions = {
       possible: true,
       products: (acid, oxide) => {
         const radical = extractAcidRadical(acid);
-        const metal = oxide.replace(/O.*$/, ""); // Extract metal from oxide formula
+        const metal = extractMetalFromOxide(oxide);
         const basicity = determineBasicity(acid);
         
         // Generate salt formula
-        let salt;
-        if (basicity === 1) {
-          // For 2HCl + CaO → CaCl2 + H2O
-          salt = `${metal}${radical}${basicity === 1 ? "" : basicity}`;
-        } else {
-          // For H2SO4 + CaO → CaSO4 + H2O
-          salt = `${metal}${radical}`;
-        }
+        const salt = balanceSaltFormula(metal, radical);
+        console.log("Building salt from:", metal, "+", radical);
+        console.log("→ Result:", salt);
         
         return [salt, "H2O"];
       },
@@ -71,12 +64,9 @@ export const acidReactions = {
         if (!metal || !radical) return null;
         
         // Generate salt formula
-        let salt;
-        if (basicity === 1) {
-          salt = `${metal}${radical}${basicity === 1 ? "" : basicity}`;
-        } else {
-          salt = `${metal}${radical}`;
-        }
+        const salt = balanceSaltFormula(metal, radical);
+        console.log("Building salt from:", metal, "+", radical);
+        console.log("→ Result:", salt);
         
         return [salt, "H2O"];
       },
@@ -89,16 +79,13 @@ export const acidReactions = {
       possible: true,
       products: (acid, oxide) => {
         const radical = extractAcidRadical(acid);
-        const metal = oxide.replace(/O.*$/, ""); // Extract metal from oxide formula
+        const metal = extractMetalFromOxide(oxide);
         const basicity = determineBasicity(acid);
         
         // Generate salt formula - similar to basic oxide reaction
-        let salt;
-        if (basicity === 1) {
-          salt = `${metal}${radical}${basicity === 1 ? "" : basicity}`;
-        } else {
-          salt = `${metal}${radical}`;
-        }
+        const salt = balanceSaltFormula(metal, radical);
+        console.log("Building salt from:", metal, "+", radical);
+        console.log("→ Result:", salt);
         
         return [salt, "H2O"];
       },

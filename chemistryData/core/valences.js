@@ -174,3 +174,53 @@ export const elementValences = {
   export function hasValence(element, valence) {
     return elementValences[element] && elementValences[element].includes(valence);
   }
+
+// export function balanceSaltFormula(cation, anion) {
+//   const catVal = Math.abs(getMostCommonValence(cation));
+//   const anVal = Math.abs(polyatomicIons[anion] || getMostCommonValence(anion));
+
+//   if (!catVal || !anVal) return null;
+
+//   const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+//   const lcm = (a, b) => (a * b) / gcd(a, b);
+
+//   const LCM = lcm(catVal, anVal);
+//   const catCount = LCM / catVal;
+//   const anCount = LCM / anVal;
+
+//   // Format component
+//   const format = (ion, count) => {
+//     if (count === 1) return ion;
+//     if (ion.length > 1) return `(${ion})${count}`;
+//     return `${ion}${count}`;
+//   };
+
+//   const cationPart = format(cation, catCount);
+//   const anionPart = format(anion, anCount);
+
+//   return `${cationPart}${anionPart}`;
+// }
+
+
+  export function balanceSaltFormula(cation, anion) {
+    const catVal = Math.abs(getMostCommonValence(cation));
+    const anVal = Math.abs(polyatomicIons[anion] || getMostCommonValence(anion));
+
+    if (!catVal || !anVal) return null;
+
+    const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+    const lcm = (a, b) => (a * b) / gcd(a, b);
+
+    const LCM = lcm(catVal, anVal);
+    const catCount = LCM / catVal;
+    const anCount = LCM / anVal;
+
+    const formatIon = (ion, count) => {
+      if (count === 1) return ion;
+      const needsParens = ion.length > 1 && /[^A-Za-z]/.test(ion);
+      return needsParens ? `(${ion})${count}` : `${ion}${count}`;
+    };
+
+    return `${formatIon(cation, catCount)}${formatIon(anion, anCount)}`;
+  }
+
