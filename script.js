@@ -22,7 +22,7 @@ document.getElementById("run").onclick = function () {
 
     const outputCallback = (message) => {
       const outputElement = document.createElement("div");
-      outputElement.textContent = message;
+      outputElement.innerHTML = message;
       document.getElementById("output").appendChild(outputElement);
     };
 

@@ -356,22 +356,23 @@ export default class Interpretor {
       if (!analysis.possible && analysis.error) {
         message += `: ${analysis.error}`;
       } else {
-        message += ".\n";
+        message += ".<br>";
         
         // Add reaction conditions if available
         if (analysis.conditions && analysis.conditions.length > 0) {
-          message += `\n✓ Conditions: ${analysis.conditions.join(", ")}`;
+          message += `<br>✓ Conditions: ${analysis.conditions.join(", ")}`;
         }
         
         // Add information about reactants if available
         if (analysis.reactantTypes) {
-          message += "\n\n🧪 Reactant information:";
+          message += "<br><br>🧪 Reactant information:";
           for (const [formula, type] of Object.entries(analysis.reactantTypes)) {
-            message += `\n   • ${formula}: ${type}`;
+            message += `<br>  • ${formula}: ${type}`;
           }
         }
       }
     }
+    message += "<br><br>";
     
     this.outputCallback(message);
     return analysis?.possible || false;
