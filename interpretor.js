@@ -205,9 +205,18 @@ export default class Interpretor {
       case "visualize":
         return this.visualize(args[0]);
       case "getVolume":
-        return this.getVolume(args[0], args[1]);
+        if (args.length === 2 && typeof args[1] === "number") { 
+          return this.getVolumeFromMass(args[0], args[1]);
+        } else if (args.length >= 2 && args[1] === "custom") { 
+          const moles = args[0];
+          const temperature = args[2] ?? physicalConstants.standardTemperature;
+          const pressure = args[3] ?? physicalConstants.standardPressure;
+          return this.getGasVolume(moles, temperature, pressure);
+        } else {
+          throw new Error("Invalid arguments for getVolume");
+        }
       case "getV":
-        return this.getGasVolume(args[0], args[1], args[2]);
+        return this.getSpecificVolume(args[0], args[1]);
       case "isAcid":
         return this.isAcid(args[0]);
       case "isBase":
@@ -651,26 +660,35 @@ export default class Interpretor {
       });
   }
 
-  getVolume(mass, density) {
-    return mass / density;
+  getVolumeFromMass(mass, density) {
+    const m = this.ensureNumber(mass, "mass");
+    const d = this.ensureNumber(density, "density");
+    return m / d;
   }
-
+   
   getGasVolume(moles, temperature, pressure) {
-    // Ideal Gas Law: PV = nRT → V = (nRT) / P
     const n = this.ensureNumber(moles, "moles");
     const T = this.ensureNumber(temperature, "temperature");
     const P = this.ensureNumber(pressure, "pressure");
     return (n * physicalConstants.R * T) / P;
   }
 
-  ensureNumber(value, name) {
-    if (typeof value !== "number") {
-      throw new Error(
-        `Invalid ${name}: Must be a number. Received ${typeof value}`
-      );
-    }
-    return value;
+
+  getSpecificVolume(volume, mass) {
+    const V = this.ensureNumber(volume, "volume");
+    const m = this.ensureNumber(mass, "mass");
+    return V / m;
   }
+
+
+  ensureNumber(value, name) {
+    const num = Number(value);
+    if (isNaN(num)) {
+      throw new Error(`Invalid ${name}: Must be a number. Received "${value}"`);
+    }
+    return num;
+  }
+
 
   parseFormula(formula) {
     // Parse a chemical formula into an array of [element, count] pairs.
