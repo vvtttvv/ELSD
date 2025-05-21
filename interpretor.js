@@ -775,14 +775,3 @@ export default class Interpretor {
   }
 }
 
-/*
-input 1:
-let variable = "C6H6";
-
-if (possible(variable + " + O2 -> CO2 + H2O")) {
-  show("Valid combustion reaction!");
-} else {
-  show("Invalid reaction!");
-}
-
-*/
