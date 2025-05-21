@@ -10,6 +10,9 @@ import { solubilityTable } from "./chemistryData/core/solubilityTable.js";
 import { extractIons } from "./chemistryData/core/extractIons.js";
 import { ReactionAnalyzer } from "./chemistryData/reactionAnalyzer.js";
 import { balanceEquation } from "./chemistryData/equationBalancer.js";
+import { isAcid as checkIfAcid } from "./chemistryData/compounds/acids/acidTypes.js";
+import { isBase as checkIfBase } from "./chemistryData/compounds/bases/baseTypes.js";
+
 
 export default class Interpretor {
   constructor(parseTree, outputCallback) {
@@ -706,12 +709,22 @@ export default class Interpretor {
   }
 
   // Functions for checking whether the substance is Acid or Base
-  isAcid(compound) {
-    return acids.includes(compound);
+  isAcid(formula) {
+    try {
+      return checkIfAcid(formula);
+    } catch (err) {
+      console.error("isAcid error:", err);
+      return false;
+    }
   }
 
-  isBase(compound) {
-    return bases.includes(compound);
+  isBase(formula) {
+    try {
+      return checkIfBase(formula);
+    } catch (err) {
+      console.error("isBase error:", err);
+      return false;
+    }
   }
 
   validateNumberOperands(left, right, operator) {
