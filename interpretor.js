@@ -197,6 +197,8 @@ export default class Interpretor {
         return this.resolveReaction(args[0]);
       case "getOxidixngs":
         return this.getOxidizingAgents(args[0]);
+      case "getReducings":
+        return this.getReducingAgents(args[0]);
       case "getMolecWeight":
         console.log("Checking reaction possibility for:", args[0]);
         return this.getMolecularWeight(args[0]);
@@ -377,9 +379,15 @@ export default class Interpretor {
   }
 
   getOxidizingAgents(reactionString) {
-    // Return only the oxidizing agents identified from the reaction string.
-    const agents = this.findRedoxAgents(reactionString);
-    return agents.oxidizing;
+    const agents = this.findRedoxAgents(reactionString).oxidizing;
+    if (!agents || agents.length === 0) return "No oxidizing agents found.";
+    return agents.map(agent => `Oxidizing Agent: ${agent}`).join("\n");
+  }
+
+  getReducingAgents(reactionString) {
+    const agents = this.findRedoxAgents(reactionString).reducing;
+    if (!agents || agents.length === 0) return "No reducing agents found.";
+    return agents.map(agent => `Reducing Agent: ${agent}`).join("\n");
   }
 
   getMolecularWeight(formula) {
@@ -678,19 +686,23 @@ export default class Interpretor {
     return components;
   }
 
-  findRedoxAgents(compounds) {
-    // Split the reaction string (by '+') and filter for known agents.
+  findRedoxAgents(reactionStr) {
+    if (!reactionStr || typeof reactionStr !== "string") {
+      return { oxidizing: [], reducing: [] };
+    }
+
+    const parts = reactionStr.split("->");
+    const reactants = parts[0].split("+").map(r => r.trim());
+
+    const foundOxidizers = reactants.filter(r => oxidizingAgents.includes(r));
+    const foundReducers = reactants.filter(r => reducingAgents.includes(r));
+
     return {
-      oxidizing: compounds
-        .split("+")
-        .map((c) => c.trim())
-        .filter((c) => oxidizingAgents.includes(c)),
-      reducing: compounds
-        .split("+")
-        .map((c) => c.trim())
-        .filter((c) => reducingAgents.includes(c)),
+      oxidizing: foundOxidizers,
+      reducing: foundReducers
     };
   }
+
 
   isCombustionReaction(reactants, products, requiredProducts) {
     // Check that one valid fuel is present, along with O2 on the reactant side.
