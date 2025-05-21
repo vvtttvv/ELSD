@@ -161,6 +161,21 @@ export const elementValences = {
     
     "Fe(CN)6": -4,     // Ferrocyanide
   };
+
+
+  export const valenceOverrides = {
+    reactantSpecific: {
+      "Fe": 2,
+      "FeO": 2,
+      "PbO": 2,
+      "SnO": 2
+    },
+
+    // Special species that imply polyatomic ions
+    polyatomicCationMatch: {
+      "NH4OH": "NH4"
+    }
+  };
   
   // Helper function to get the most common valence of an element
   export function getMostCommonValence(element) {
@@ -175,36 +190,28 @@ export const elementValences = {
     return elementValences[element] && elementValences[element].includes(valence);
   }
 
-// export function balanceSaltFormula(cation, anion) {
-//   const catVal = Math.abs(getMostCommonValence(cation));
-//   const anVal = Math.abs(polyatomicIons[anion] || getMostCommonValence(anion));
+  export function getMostLikelyValence(element, context = null) {
+    // Check override first
+    if (valenceOverrides.reactantSpecific[element]) {
+      return valenceOverrides.reactantSpecific[element];
+    }
 
-//   if (!catVal || !anVal) return null;
+    const valences = elementValences[element];
+    if (!valences || valences.length === 0) return null;
 
-//   const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
-//   const lcm = (a, b) => (a * b) / gcd(a, b);
+    if (context) {
+      if (context.includes("O")) {
+        return Math.min(...valences);
+      }
+    }
 
-//   const LCM = lcm(catVal, anVal);
-//   const catCount = LCM / catVal;
-//   const anCount = LCM / anVal;
+    return valences[0];
+  }
 
-//   // Format component
-//   const format = (ion, count) => {
-//     if (count === 1) return ion;
-//     if (ion.length > 1) return `(${ion})${count}`;
-//     return `${ion}${count}`;
-//   };
+  export function balanceSaltFormula(cation, anion, context = null) {
+    const catVal = Math.abs(polyatomicIons[cation] || getMostLikelyValence(cation, context));
+    const anVal = Math.abs(polyatomicIons[anion] || getMostLikelyValence(anion));
 
-//   const cationPart = format(cation, catCount);
-//   const anionPart = format(anion, anCount);
-
-//   return `${cationPart}${anionPart}`;
-// }
-
-
-  export function balanceSaltFormula(cation, anion) {
-    const catVal = Math.abs(getMostCommonValence(cation));
-    const anVal = Math.abs(polyatomicIons[anion] || getMostCommonValence(anion));
 
     if (!catVal || !anVal) return null;
 

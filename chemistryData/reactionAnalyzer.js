@@ -15,6 +15,7 @@ export class ReactionAnalyzer {
     this.acidHandler = new AcidHandler();
     this.acidHandler.baseHandler = this.baseHandler;
     this.saltHandler = new SaltHandler();
+    this.acidHandler.saltHandler = this.saltHandler;
   }
 
   //Determines if a reaction is possible

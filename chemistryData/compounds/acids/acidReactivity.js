@@ -3,8 +3,20 @@ import { oxideCategories, classifyOxide } from '../oxides/oxideTypes.js';
 import { extractIons } from '../../core/extractIons.js';
 import { isMetal } from '../../core/elements.js';
 import { isBase } from '../bases/baseTypes.js';
-import { balanceSaltFormula } from '../../core/valences.js';
+import { balanceSaltFormula, polyatomicIons, valenceOverrides } from '../../core/valences.js';
 import { extractMetalFromOxide } from '../../core/utils.js';
+import { extractSaltComponents } from '../salts/saltTypes.js';
+
+
+const volatileAcidProducts = {
+  CO3: ["H2O", "CO2"],
+  HCO3: ["H2O", "CO2"],
+  SO3: ["H2O", "SO2"],
+  HSO3: ["H2O", "SO2"],
+  S: ["H2S"],
+  NO2: ["HNO2"]
+};
+
 
 /**
  * Reaction patterns for acids with different reactants
@@ -24,7 +36,7 @@ export const acidReactions = {
         const basicity = determineBasicity(acid);
         
         // Determine the formula of the salt
-        const salt = balanceSaltFormula(metal, radical);
+        const salt = balanceSaltFormula(metal, radical, metal);
         console.log("Building salt from:", metal, "+", radical);
         console.log("→ Result:", salt);
         
@@ -43,7 +55,7 @@ export const acidReactions = {
         const basicity = determineBasicity(acid);
         
         // Generate salt formula
-        const salt = balanceSaltFormula(metal, radical);
+        const salt = balanceSaltFormula(metal, radical, oxide);
         console.log("Building salt from:", metal, "+", radical);
         console.log("→ Result:", salt);
         
@@ -58,13 +70,19 @@ export const acidReactions = {
       possible: true,
       products: (acid, base) => {
         const radical = extractAcidRadical(acid);
-        const metal = base.match(/^([A-Z][a-z]*)/) ? base.match(/^([A-Z][a-z]*)/)[1] : null;
+        let metal = null;
+
+        if (valenceOverrides.polyatomicCationMatch[base]) {
+          metal = valenceOverrides.polyatomicCationMatch[base];
+        } else {
+          metal = base.match(/^([A-Z][a-z]*)/) ? base.match(/^([A-Z][a-z]*)/)[1] : null;
+        }
         const basicity = determineBasicity(acid);
         
         if (!metal || !radical) return null;
         
         // Generate salt formula
-        const salt = balanceSaltFormula(metal, radical);
+        const salt = balanceSaltFormula(metal, radical, base);
         console.log("Building salt from:", metal, "+", radical);
         console.log("→ Result:", salt);
         
@@ -83,7 +101,7 @@ export const acidReactions = {
         const basicity = determineBasicity(acid);
         
         // Generate salt formula - similar to basic oxide reaction
-        const salt = balanceSaltFormula(metal, radical);
+        const salt = balanceSaltFormula(metal, radical, oxide);
         console.log("Building salt from:", metal, "+", radical);
         console.log("→ Result:", salt);
         
@@ -96,37 +114,22 @@ export const acidReactions = {
     // Strong Acid + Salt (with a more volatile acid) -> New salt + New acid
     "salt": {
       possible: (acid, salt) => {
-        const { anion } = extractIons(salt);
-        
-        // Determine if the anion can form a weaker/more volatile acid
-        const volatileAnions = ["CO3", "HCO3", "SO3", "HSO3", "S", "NO2"];
-        return volatileAnions.includes(anion);
+        const { anion } = extractSaltComponents(salt);
+        const normalizedAnion = anion?.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+        return volatileAcidProducts.hasOwnProperty(normalizedAnion);
       },
+
       products: (acid, salt) => {
         const radical = extractAcidRadical(acid);
-        const { cation, anion } = extractIons(salt);
+        const { cation, anion } = extractSaltComponents(salt);
         
-        // Reactions differ based on anion of the salt
-        if (anion === "CO3") {
-          // e.g., HCl + Na2CO3 → 2NaCl + H2O + CO2
-          return [`${cation}${radical}`, "H2O", "CO2"];
-        } else if (anion === "SO3") {
-          // e.g., HCl + Na2SO3 → 2NaCl + H2O + SO2
-          return [`${cation}${radical}`, "H2O", "SO2"];
-        } else if (anion === "S") {
-          // e.g., HCl + Na2S → 2NaCl + H2S
-          return [`${cation}${radical}`, "H2S"];
-        } else if (anion === "HCO3") {
-          // e.g., HCl + NaHCO3 → NaCl + H2O + CO2
-          return [`${cation}${radical}`, "H2O", "CO2"];
-        } else if (anion === "HSO3") {
-          // e.g., HCl + NaHSO3 → NaCl + H2O + SO2
-          return [`${cation}${radical}`, "H2O", "SO2"];
-        } else if (anion === "NO2") {
-          // e.g., HCl + NaNO2 → NaCl + HNO2
-          return [`${cation}${radical}`, `H${anion}`];
+        const normalizedAnion = anion?.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+        const products = volatileAcidProducts[normalizedAnion];
+
+        if (products) {
+          return [`${cation}${radical}`, ...products];
         }
-        
+
         return null;
       },
       reactionType: "double_replacement",
@@ -386,80 +389,84 @@ export function predictProducts(acid, reactant, isConcentrated = false) {
   return null;
 }
 
-//Gets information about a reaction involving an acid
+// Gets information about a reaction involving an acid
 export function getReactionInfo(acid, reactant, isConcentrated = false) {
   // First check if the reaction is possible
   if (!canReact(acid, reactant, isConcentrated)) {
     return null;
   }
-  
+
   // Determine acid strength and reaction details
   let acidStrength = classifyAcidByStrength(acid);
   let reactantType;
   let reactionDetails;
-  
+
   // Handle special case for concentrated acids
-  if (isConcentrated && 
-      (acid === "H2SO4" || acid === "HNO3") && 
-      isMetal(reactant)) {
+  if (
+    isConcentrated &&
+    (acid === "H2SO4" || acid === "HNO3") &&
+    isMetal(reactant)
+  ) {
     return {
       acidType: "concentrated " + acid,
       reactantType: "metal",
       reactionType: acidReactions["concentrated"]["metal"].reactionType,
       products: acidReactions["concentrated"]["metal"].products(acid, reactant),
-      conditions: acidReactions["concentrated"]["metal"].conditions || []
+      conditions: acidReactions["concentrated"]["metal"].conditions || [],
     };
   }
-  
-  // Check if reactant is a metal
+
+    // Check metal
   if (isMetal(reactant)) {
     reactantType = "metal";
     reactionDetails = acidReactions[acidStrength]["metal"];
   }
 
-  // Check if reactant is a base (before oxide!)
+  // Check salt FIRST
+  else if (
+    acidReactions[acidStrength]["salt"] &&
+    acidReactions[acidStrength]["salt"].possible(acid, reactant)
+  ) {
+    reactantType = "salt";
+    reactionDetails = acidReactions[acidStrength]["salt"];
+  }
+
+  // Check base
   else if (isBase(reactant)) {
     reactantType = "base";
     reactionDetails = acidReactions[acidStrength]["base"];
   }
 
-  // Then check if reactant is an oxide
-  else {
+  // Check oxide
+  if (!reactionDetails) {
     const oxideType = classifyOxide(reactant);
     if (oxideType) {
       reactantType = `${oxideType} oxide`;
       reactionDetails = acidReactions[acidStrength][oxideType];
     }
   }
-  
-  // Check for salt
-  if (!reactant.startsWith('H') && !reactant.includes('OH') && 
-      !reactant.match(/^[A-Z][a-z]?$/)) { // Not a single element
-    if (acidReactions[acidStrength]["salt"] && 
-        acidReactions[acidStrength]["salt"].possible(acid, reactant)) {
-      reactantType = "salt";
-      reactionDetails = acidReactions[acidStrength]["salt"];
-    }
-  }
-  
+
   // For thermal decomposition
   if (reactant === "heat") {
-    if (acidReactions[acidStrength]["heat"] && 
-        acidReactions[acidStrength]["heat"].possible(acid)) {
+    if (
+      acidReactions[acidStrength]["heat"] &&
+      acidReactions[acidStrength]["heat"].possible(acid)
+    ) {
       reactantType = "heat";
       reactionDetails = acidReactions[acidStrength]["heat"];
     }
   }
-  
+
   if (!reactionDetails) return null;
-  
+
   return {
     acidType: acidStrength,
     reactantType,
     reactionType: reactionDetails.reactionType,
-    products: reactantType === "heat" ? 
-      reactionDetails.products(acid) : 
-      reactionDetails.products(acid, reactant),
-    conditions: reactionDetails.conditions || []
+    products:
+      reactantType === "heat"
+        ? reactionDetails.products(acid)
+        : reactionDetails.products(acid, reactant),
+    conditions: reactionDetails.conditions || [],
   };
 }

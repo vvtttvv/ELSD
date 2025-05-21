@@ -242,14 +242,6 @@ window.addEventListener('load', () => {
     document.getElementById("output").appendChild(outputElement);
   };
   
-  // Test if OpenChemLib is available
-  if (typeof OCL === 'undefined') {
-    outputCallback("WARNING: OpenChemLib not loaded!");
-  } else {
-    outputCallback("OpenChemLib loaded successfully");
-  }
-   
-  
   // Initialize RDKit but don't render anything yet
   initRDKitModule().then(RDKit => {
     outputCallback("RDKit initialized successfully");

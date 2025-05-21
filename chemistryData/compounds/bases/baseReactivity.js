@@ -3,6 +3,8 @@ import { oxideCategories, classifyOxide } from '../oxides/oxideTypes.js';
 import { extractIons } from '../../core/extractIons.js';
 import { elementValences } from '../../core/valences.js';
 import { solubilityTable } from '../../core/solubilityTable.js';
+import { balanceSaltFormula } from '../../core/valences.js';
+
 
 /**
  * Reaction patterns for bases with different reactants
@@ -19,15 +21,7 @@ export const baseReactions = {
         if (!metal || !anion) return null;
         
         const hydroxideCount = getHydroxideCount(base);
-        
-        // Determine salt formula based on metal valence
-        let salt;
-        if (hydroxideCount === 1) {
-          salt = `${metal}${anion}`;
-        } else {
-          salt = `${metal}${anion}${hydroxideCount}`;
-        }
-        
+        const salt = balanceSaltFormula(metal, anion);
         return [salt, "H2O"];
       },
       reactionType: "neutralization",
@@ -111,14 +105,13 @@ export const baseReactions = {
         const { cation, anion } = extractIons(salt);
         const baseMetalIon = extractMetal(base);
         if (!cation || !anion || !baseMetalIon) return null;
-        
-        // Form new salt and insoluble hydroxide
-        // Example: 2NaOH + CuSO4 → Na2SO4 + Cu(OH)2↓
-        const newSalt = `${baseMetalIon}2${anion}`;
-        const precipitate = `${cation}(OH)2`;
-        
+
+        const newSalt = balanceSaltFormula(baseMetalIon, anion);
+        const precipitate = balanceSaltFormula(cation, "OH");
+
         return [newSalt, precipitate];
       },
+
       reactionType: "precipitation",
       conditions: ["room temperature", "aqueous"]
     },
@@ -153,14 +146,7 @@ export const baseReactions = {
         if (!metal || !anion) return null;
         
         const hydroxideCount = getHydroxideCount(base);
-        
-        // Similar to strong base reaction
-        let salt;
-        if (hydroxideCount === 1) {
-          salt = `${metal}${anion}`;
-        } else {
-          salt = `${metal}${anion}${hydroxideCount}`;
-        }
+        const salt = balanceSaltFormula(metal, anion);
         
         return [salt, "H2O"];
       },
@@ -229,15 +215,7 @@ export const baseReactions = {
         if (!metal || !anion) return null;
         
         const hydroxideCount = getHydroxideCount(base);
-        
-        // Regular neutralization
-        // Example: Zn(OH)2 + 2HCl → ZnCl2 + 2H2O
-        let salt;
-        if (hydroxideCount === 1) {
-          salt = `${metal}${anion}`;
-        } else {
-          salt = `${metal}${anion}${hydroxideCount}`;
-        }
+        const salt = balanceSaltFormula(metal, anion);
         
         return [salt, "H2O"];
       },
@@ -305,9 +283,10 @@ export function canReact(base, reactant) {
   
   // Check if reactant is an oxide
   const oxideType = classifyOxide(reactant);
-  if (oxideType) {
+  if (oxideType && reactant.includes("O")) {  // Only match true oxides
     return baseReactions[baseStrength][oxideType]?.possible || false;
   }
+
   
   // Check if reactant is another base (for amphoteric reactions)
   if (reactant.includes('OH')) {

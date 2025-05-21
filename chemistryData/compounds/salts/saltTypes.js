@@ -82,6 +82,7 @@ export const knownSalts = {
   "ZnSO4": [saltCategories.NORMAL, saltCategories.SOLUBLE],
   "FeSO4": [saltCategories.NORMAL, saltCategories.SOLUBLE],
   "Fe2(SO4)3": [saltCategories.NORMAL, saltCategories.SOLUBLE],
+  "NaNO2": [saltCategories.NORMAL, saltCategories.SOLUBLE],
   
   // Acidic salts (from partial neutralization of polyprotic acids)
   "NaHSO4": [saltCategories.ACIDIC, saltCategories.SOLUBLE],
@@ -103,7 +104,7 @@ export const knownSalts = {
 export function isSalt(formula) {
   // Check if it's a known salt
   if (formula in knownSalts) return true;
-  
+
   // Exclude common non-salts
   const nonSalts = [
     'H2O', 'H2O2', 'H2', 'O2', 'N2', 'Cl2', 'Br2', 'I2', // Elements and simple compounds
@@ -111,38 +112,34 @@ export function isSalt(formula) {
     'NaOH', 'KOH', 'Ca(OH)2', 'Mg(OH)2', 'Al(OH)3', // Bases
     'CO2', 'SO2', 'NO2', 'P2O5', 'SO3', 'N2O5', 'CaO', 'MgO', 'Al2O3' // Oxides
   ];
-  
   if (nonSalts.includes(formula)) return false;
-  
-  // Check for salt patterns
-  
-  // Pattern 1: Metal + non-metal/polyatomic ion
+
+  // Pattern 1: Metal + acid radical (anion)
   const { cation, anion } = extractIons(formula);
   if (cation && anion) {
-    // Check if cation is a metal (or ammonium)
+    // Check if cation is a metal or ammonium
     if (isMetal(cation) || cation === 'NH4') {
-      // Check if anion is a recognized acid radical
-      for (const radical in acidRadicals) {
-        if (formula.includes(acidRadicals[radical])) {
-          return true;
-        }
+      // Check if anion is a known acid radical
+      const knownAnions = Object.values(acidRadicals);
+      if (knownAnions.includes(anion)) {
+        return true;
       }
     }
   }
-  
+
   // Pattern 2: Contains both metal and non-metal/polyatomic ion but not H, OH
-  if (formula.match(/[A-Z]/) && 
-      !formula.startsWith('H') && 
+  if (formula.match(/[A-Z]/) &&
+      !formula.startsWith('H') &&
       !formula.includes('OH') &&
       formula.length > 1) {
-    // Excludes simple binary compounds like NaCl
     if (formula.match(/[A-Z][a-z]?[0-9]?[A-Z]/)) {
       return true;
     }
   }
-  
+
   return false;
 }
+
 
 //Extracts the cation and anion from a salt formula
 export function extractSaltComponents(formula) {
