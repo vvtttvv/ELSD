@@ -77,7 +77,15 @@ Output: `C6H6 + O2 -> CO2 + H2O`
 ## Reaction possibility
 Checks whether a given chemical reaction is feasible based on known compound interactions and rules.  
 **Input:** `show(possible("NaOH + HCl -> NaCl + H2O"));`  
-**Output:** `true`
+**Output:**  
+`The reaction "NaOH + HCl -> NaCl + H2O" is chemically possible.`
+
+- **✓ Conditions:** room temperature, aqueous  
+- **🧪 Reactant information:**  
+  • HCl: Strong Non-oxygenated Acid (monoprotic)  
+  • NaOH: Strong Base (Soluble)
+
+`true`
 
 ## Balance reaction
 Balances a chemical reaction.  
@@ -86,13 +94,13 @@ Balances a chemical reaction.
 
 ## Oxidizing agents
 Returns known oxidizing agents found in the reaction.  
-**Input:** `getOxidixngs("H2 + Cl2 -> HCl")`  
-**Output:** `["Cl2"]`
+**Input:** `show(getOxidixngs("H2 + Cl2 -> HCl"));`  
+**Output:** `Oxidizing Agent: Cl2`
 
 ## Reducing agents
 Returns known reducing agents found in the reaction.  
-**Input:** `getReducings("Fe + CuSO4 -> FeSO4 + Cu")`  
-**Output:** `["Fe"]`
+**Input:** `show(getReducings("Fe + CuSO4 -> FeSO4 + Cu"));`  
+**Output:** `Reducing Agent: Fe`
 
 ## Molecular weight
 Calculates molecular weight of a compound. 
