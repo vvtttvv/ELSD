@@ -89,8 +89,8 @@ Checks whether a given chemical reaction is feasible based on known compound int
 
 ## Balance reaction
 Balances a chemical reaction.  
-**Input:** `show(resolve("Fe + O2 -> Fe2O3"));`  
-**Output:** `"4 Fe + 3 O2 -> 2 Fe2O3"`
+**Input:** `show(resolve("Na3PO4 + CaCl2 -> Ca3(PO4)2 + NaCl"));`  
+**Output:** `"2 Na3PO4 + 3 CaCl2 -> 1 Ca3(PO4)2 + 6 NaCl"`
 
 ## Oxidizing agents
 Returns known oxidizing agents found in the reaction.  
