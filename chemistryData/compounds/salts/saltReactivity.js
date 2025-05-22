@@ -1,4 +1,4 @@
-import { saltCategories, classifySaltByType, isSoluble, determineSaltpH, extractSaltComponents } from './saltTypes.js';
+import { saltCategories, classifySaltByType, isSoluble, determineSaltpH, extractSaltComponents, isSalt } from './saltTypes.js';
 import { oxideCategories, classifyOxide } from '../oxides/oxideTypes.js';
 import { baseCategories, classifyBaseByStrength } from '../bases/baseTypes.js';
 import { acidCategories, classifyAcidByStrength } from '../acids/acidTypes.js';
@@ -449,20 +449,16 @@ export function canReact(salt, reactant) {
   }
   
   // Check if reactant is another salt
-  if (!reactant.startsWith('H') && !reactant.includes('OH') && 
-      !reactant.match(/^[A-Z][a-z]?$/) && !reactant.includes('O')) {
-    if (!saltReactions[saltType] || !saltReactions[saltType]["salt"] || !saltReactions[saltType]["salt"].possible) {
-      return false;
-    }
-    
+  if (isSalt(reactant)) {
+    if (!saltReactions[saltType]?.salt?.possible) return false;
     try {
-      return saltReactions[saltType]["salt"].possible(salt, reactant) || false;
+      return saltReactions[saltType].salt.possible(salt, reactant) || false;
     } catch (err) {
       console.warn(`Error checking salt-salt reaction:`, err.message);
       return false;
     }
   }
-  
+
   // For thermal decomposition (special case)
   if (reactant === "heat") {
     if (!saltReactions[saltType] || !saltReactions[saltType]["heat"] || !saltReactions[saltType]["heat"].possible) {
@@ -506,10 +502,10 @@ export function predictProducts(salt, reactant) {
   }
   
   // Check if reactant is another salt
-  if (!reactant.startsWith('H') && !reactant.includes('OH') && 
-      !reactant.match(/^[A-Z][a-z]?$/) && !reactant.includes('O')) {
-    return saltReactions[saltType]["salt"].products(salt, reactant);
+  if (isSalt(reactant)) {
+    return saltReactions[saltType].salt.products(salt, reactant);
   }
+
   
   // For thermal decomposition
   if (reactant === "heat") {
@@ -550,8 +546,7 @@ export function getReactionInfo(salt, reactant) {
   }
   
   // Check if reactant is another salt
-  else if (!reactant.startsWith('H') && !reactant.includes('OH') && 
-      !reactant.match(/^[A-Z][a-z]?$/) && !reactant.includes('O')) {
+  else if (isSalt(reactant)) {
     reactantType = "salt";
     reactionDetails = saltReactions[saltType]["salt"];
   }
