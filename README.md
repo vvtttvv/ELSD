@@ -99,20 +99,25 @@ Calculates molecular weight of a compound.
 **Input:** `show(getMolecWeight("H2O"));`  
 **Output:** `18.015`
 
-## Volume from mass
+## Volume from mass  
 Computes volume using mass and density.  
 **Input:** `show(getVolume(10, 2))`  
 **Output:** `5`
 
-## Gas volume
-Calculates volume of a gas using the Ideal Gas Law. Optional arguments: temperature, pressure.  
-**Input:** `show(getVolume(1, 273.15, 101.325));`  
-**Output:** `22.414`
+## Gas volume  
+Calculates volume of a gas using the Ideal Gas Law. Requires `"custom"` as the second argument, followed by temperature (K) and pressure (kPa).  
+**Input:** `show(getVolume(1, "custom", 273.15, 101.325))`  
+**Output:** `0.221...`  
 
-## Specific volume
-Computes specific volume from total volume and molecular mass.  
-**Input:** `show(getV(22.414, 18.015));`  
-**Output:** `1.244`
+**Input:** `show(getVolume(2, "custom", 300, 100))`  
+**Output:** `0.4926...`
+
+_Note: The function returns values in liters._
+
+## Specific volume  
+Computes specific volume from total volume and mass.  
+**Input:** `show(getV(22.4, 1))`  
+**Output:** `22.4`
 
 ## Acid check
 Returns `true` if the compound is acidic.  
