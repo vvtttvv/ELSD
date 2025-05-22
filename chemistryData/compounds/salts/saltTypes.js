@@ -2,6 +2,7 @@ import { elementValences } from '../../core/valences.js';
 import { isMetal, isNonMetal } from '../../core/elements.js';
 import { extractIons } from '../../core/extractIons.js';
 import { solubilityTable } from '../../core/solubilityTable.js';
+import { isOxide } from '../oxides/oxideTypes.js';
 
 const acidRadicals = {
   "HCl": "Cl",
@@ -102,6 +103,8 @@ export const knownSalts = {
 
 //Determines if a formula represents a salt
 export function isSalt(formula) {
+  if (isOxide(formula)) return false;
+
   // Check if it's a known salt
   if (formula in knownSalts) return true;
 

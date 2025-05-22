@@ -94,11 +94,21 @@ export function isOxide(formula) {
   if (formula.includes('OH')) return false;
   
   // Exclude common oxoanions and oxoacids
-  const nonOxides = ['CO3', 'SO4', 'NO3', 'PO4', 'ClO', 'H2SO4', 'HNO3', 'H3PO4', 'HClO'];
+  const nonOxides = [
+    'CO3', 'SO4', 'NO3', 'PO4', 'ClO', 'ClO2', 'ClO3', 'ClO4', 
+    'MnO4', 'CrO4', 'Cr2O7', 'BO3', 'SiO3',
+    'H2SO4', 'HNO3', 'H3PO4', 'HClO', 'HClO2', 'HClO3', 'HClO4'
+  ];
+
   for (const nonOxide of nonOxides) {
     if (formula.includes(nonOxide)) return false;
   }
-  
+
+  // Extra rejection for known salt-like structures: metal + polyatomic with O
+  if (formula.match(/(SO4|NO3|CO3|PO4|ClO[1-4]?|MnO4|CrO4|Cr2O7)/)) {
+    return false;
+  }
+
   // Check if it's in our known oxides list
   if (formula in knownOxides) return true;
   

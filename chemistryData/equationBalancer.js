@@ -1,3 +1,49 @@
+export function parseFormulaForBalancing(formula) {
+  if (typeof formula !== "string") {
+    throw new Error(`Invalid formula: expected string, got ${typeof formula}`);
+  }
+
+  const stack = [[]]; // Stack of element-count arrays
+  const regex = /([A-Z][a-z]?)(\d*)|(\()|(\))(\d*)/g;
+  let match;
+
+  while ((match = regex.exec(formula)) !== null) {
+    if (match[1]) {
+      // Matched element (e.g., Ca, Cl, O)
+      const element = match[1];
+      const count = parseInt(match[2] || "1", 10);
+      stack[stack.length - 1].push([element, count]);
+    } else if (match[3]) {
+      // Opening parenthesis
+      stack.push([]);
+    } else if (match[4]) {
+      // Closing parenthesis
+      const group = stack.pop();
+      const multiplier = parseInt(match[5] || "1", 10);
+      for (const [element, count] of group) {
+        const existing = stack[stack.length - 1].find(([el]) => el === element);
+        if (existing) {
+          existing[1] += count * multiplier;
+        } else {
+          stack[stack.length - 1].push([element, count * multiplier]);
+        }
+      }
+    }
+  }
+
+  if (stack.length !== 1) {
+    throw new Error(`Unmatched parentheses in formula: ${formula}`);
+  }
+
+  // Merge duplicates (e.g., H2 + H2O → merge H counts)
+  const counts = {};
+  for (const [element, count] of stack[0]) {
+    counts[element] = (counts[element] || 0) + count;
+  }
+
+  return Object.entries(counts);
+}
+
 export function balanceEquation(reactionString, parseFormula) {
     // Split into left and right side of the reaction
     const [lhs, rhs] = reactionString.split("->");
@@ -11,13 +57,15 @@ export function balanceEquation(reactionString, parseFormula) {
     // Parse each compound and collect unique elements
     const elementSet = new Set();
     const compoundElements = allCompounds.map(compound => {
-      const parsed = parseFormula(compound);
-      if (!parsed) {
-        throw new Error(`Failed to parse formula: ${compound}`);
+      try {
+        const parsed = parseFormulaForBalancing(compound);
+        parsed.forEach(([el]) => elementSet.add(el));
+        return parsed;
+      } catch (err) {
+        throw new Error(`Failed to parse formula "${compound}": ${err.message}`);
       }
-      parsed.forEach(([el]) => elementSet.add(el));
-      return parsed;
     });
+
 
   
     // Build matrix rows (one per element), columns (compounds)
