@@ -1,6 +1,80 @@
 import Lexer from "./lexer.js";
 import Parser from "./parser.js";
 import Interpretor from "./interpretor.js";
+
+//-----------------------------------------------------
+// Some cool animation (at least I tried)
+
+const output = document.getElementById("output");
+const rect = output.getBoundingClientRect();
+
+const width = rect.width;
+const height = rect.height;
+ 
+const animation = document.createElement("div");
+animation.id = "loading-animation";
+animation.innerHTML = `
+  <style>
+    #output {
+      display: flex;
+      justify-content: center;
+      padding-top: ${height / 2 - 40}px;
+    }
+    /* HTML: <div class="loader"></div> */
+    .loader {
+      width: 100px;
+      aspect-ratio: 1.154;
+      position: relative;
+      background: conic-gradient(from 120deg at 50% 64%,#0000,rgb(0, 0, 0) 1deg 120deg,#0000 121deg);
+      animation: l27-0 1.5s infinite cubic-bezier(0.3,1,0,1);
+    }
+    .loader:before,
+    .loader:after {
+      content:'';
+      position: absolute;
+      inset:0;
+      background:inherit;
+      transform-origin: 50% 66%;
+      animation: l27-1 1.5s infinite;
+    }
+    .loader:after {
+      --s:-1;
+    }
+    @keyframes l27-0 {
+      0%,30%      {transform: rotate(0)}
+      70%         {transform: rotate(120deg)}
+      70.01%,100% {transform: rotate(360deg)}
+    }
+    @keyframes l27-1 {
+      0%      {transform: rotate(calc(var(--s,1)*120deg)) translate(0)}
+      30%,70% {transform: rotate(calc(var(--s,1)*120deg)) translate(calc(var(--s,1)*-10px),20px)}
+      100%    {transform: rotate(calc(var(--s,1)*120deg)) translate(0)}
+    }
+  </style>
+  <div class="loader"></div>
+`;
+
+
+function updateEmptyState() {
+
+  if (output.childNodes.length  === 0) {
+    if (!output.contains(animation)) {
+      output.appendChild(animation);
+    }
+  } else if (output.childNodes.length === 2) {
+    if (output.contains(animation)) {
+      output.removeChild(animation);
+    }
+  } 
+}
+ 
+const observer = new MutationObserver(() => {
+  updateEmptyState();
+});
+
+observer.observe(output, { childList: true });
+
+updateEmptyState();
  
 
 //To clear input
@@ -244,7 +318,7 @@ window.addEventListener('load', () => {
   
   // Initialize RDKit but don't render anything yet
   initRDKitModule().then(RDKit => {
-    outputCallback("RDKit initialized successfully");
+    console.log("RDKit initialized successfully");
   }).catch(err => {
     outputCallback("Error initializing RDKit: " + err.message);
   });
@@ -270,3 +344,8 @@ if (possible("C6H6" + variable)) {
   show("Reaction is not possible");
 }
 */
+
+
+
+
+

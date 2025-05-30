@@ -195,3 +195,27 @@ button:hover{
     border: 1px solid #ccc;
     background-color: #ffffff; 
 }
+
+   .logo_text h1 {
+    background: linear-gradient(270deg, black, gold, black);
+    background-size: 600% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: textGradientFlow 18s ease-in-out infinite;
+    white-space: nowrap;
+    margin: 0;
+    padding: 0;
+  }
+
+  @keyframes textGradientFlow {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
