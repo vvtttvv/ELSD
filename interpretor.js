@@ -385,6 +385,9 @@ export default class Interpretor {
         this.parseFormula.bind(this)
       );
     }
+    console.log(reactionString);
+    console.log(this.reactionAnalyzer);
+    console.log(this.parseFormula);
     return balanceEquation(reactionString, this.parseFormula.bind(this));
   }
 
@@ -690,20 +693,56 @@ export default class Interpretor {
     return num;
   }
 
-
-  parseFormula(formula) {
-    // Parse a chemical formula into an array of [element, count] pairs.
-    const regex = /([A-Z][a-z]*)(\d*)/g;
-    const components = [];
-    let match;
-    while ((match = regex.exec(formula)) !== null) {
-      const element = match[1];
-      const count = match[2] === "" ? 1 : parseInt(match[2]);
-      components.push([element, count]);
-    }
-    console.log("Parsed formula components for:", formula, components);
-    return components;
+ parseFormula(formula) {
+  if (!formula || typeof formula !== "string") {
+    throw new Error("Formula must be a non-empty string.");
   }
+
+  const stack = [{}];
+  const regex = /([A-Z][a-z]*)(\d*)|(\()|(\))(\d*)/g;
+  let match;
+  let openParens = 0;
+
+  while ((match = regex.exec(formula))) {
+    if (match[1]) {
+      // Element + optional count
+      const el = match[1];
+      const count = parseInt(match[2] || "1");
+      const top = stack[stack.length - 1];
+      top[el] = (top[el] || 0) + count;
+    } else if (match[3]) {
+      // Opening parenthesis
+      stack.push({});
+      openParens++;
+    } else if (match[4]) {
+      // Closing parenthesis
+      if (stack.length === 1) {
+        throw new Error(`Unexpected closing parenthesis in "${formula}"`);
+      }
+      openParens--;
+      const group = stack.pop();
+      const multiplier = parseInt(match[5] || "1");
+      const top = stack[stack.length - 1];
+      for (const el in group) {
+        top[el] = (top[el] || 0) + group[el] * multiplier;
+      }
+    }
+  }
+
+  if (openParens !== 0 || stack.length !== 1) {
+    throw new Error(`Unbalanced parentheses in formula "${formula}"`);
+  }
+
+  const result = Object.entries(stack[0]);
+  if (result.length === 0) {
+    throw new Error(`Failed to parse any elements from formula "${formula}"`);
+  }
+
+  return result;
+}
+
+
+
 
   findRedoxAgents(reactionStr) {
     if (!reactionStr || typeof reactionStr !== "string") {
