@@ -75,8 +75,145 @@ const observer = new MutationObserver(() => {
 observer.observe(output, { childList: true });
 
 updateEmptyState();
- 
 
+
+//-----------------------------------------------------
+// VISUALIZATION TOGGLE FUNCTIONALITY
+
+// Global variables for visualization mode
+let isJSmolMode = false;
+
+// Function to clear visualization containers
+function clearVisualizationContainers() {
+  const visualize2D = document.getElementById('visualize');
+  const visualize3D = document.getElementById('visualize3d');
+  const jsmolContainer = document.getElementById('jsmolContainer');
+  
+  if (visualize2D) {
+    if (typeof Kekule !== 'undefined' && Kekule.DomUtils) {
+      Kekule.DomUtils.clearChildContent(visualize2D);
+    } else {
+      visualize2D.innerHTML = '';
+    }
+    visualize2D.innerHTML = '<div class="loading-placeholder"><div class="loading-spinner"></div><p>Ready for 2D visualization</p></div>';
+  }
+  
+  if (visualize3D) {
+    if (typeof Kekule !== 'undefined' && Kekule.DomUtils) {
+      Kekule.DomUtils.clearChildContent(visualize3D);
+    } else {
+      visualize3D.innerHTML = '';
+    }
+    visualize3D.innerHTML = '<div class="loading-placeholder"><div class="loading-spinner"></div><p>Ready for 3D visualization</p></div>';
+  }
+  
+  if (jsmolContainer) {
+    jsmolContainer.innerHTML = '<div class="loading-placeholder"><div class="loading-spinner"></div><p>Ready for JSmol visualization</p></div>';
+  }
+
+  // Reset status indicators
+  const status2d = document.getElementById('status2d');
+  const status3d = document.getElementById('status3d');
+  const statusJsmol = document.getElementById('statusJsmol');
+  
+  if (status2d) status2d.classList.add('inactive');
+  if (status3d) status3d.classList.add('inactive');
+  if (statusJsmol) statusJsmol.classList.add('inactive');
+}
+
+// Initialize toggle functionality when DOM loads
+document.addEventListener('DOMContentLoaded', function() {
+  const toggle = document.getElementById('visualizationToggle');
+  const container = document.getElementById('visualizationContainer');
+  const kekuleLabel = document.getElementById('kekuleLabel');
+  const jsmolLabel = document.getElementById('jsmolLabel');
+  const currentMode = document.getElementById('currentMode');
+  const status2d = document.getElementById('status2d');
+  const status3d = document.getElementById('status3d');
+  const statusJsmol = document.getElementById('statusJsmol');
+
+  // Initialize status indicators
+  if (status2d) status2d.classList.add('inactive');
+  if (status3d) status3d.classList.add('inactive');
+  if (statusJsmol) statusJsmol.classList.add('inactive');
+
+  if (toggle) {
+    toggle.addEventListener('click', () => {
+      isJSmolMode = !isJSmolMode;
+      
+      console.log('Toggle clicked, new mode:', isJSmolMode ? 'JSmol' : 'Kekule');
+      
+      if (isJSmolMode) {
+        // Switch to JSmol mode
+        toggle.classList.add('active');
+        if (container) {
+          container.classList.remove('kekule-mode');
+          container.classList.add('jsmol-mode');
+        }
+        if (kekuleLabel) kekuleLabel.classList.remove('active');
+        if (jsmolLabel) jsmolLabel.classList.add('active');
+        if (currentMode) currentMode.textContent = 'Current Mode: JSmol (Interactive 3D)';
+        
+        // Update status indicators
+        if (status2d) status2d.classList.add('inactive');
+        if (status3d) status3d.classList.add('inactive');
+        if (statusJsmol) statusJsmol.classList.remove('inactive');
+        
+        console.log('Switched to JSmol mode');
+        
+      } else {
+        // Switch to Kekule mode
+        toggle.classList.remove('active');
+        if (container) {
+          container.classList.remove('jsmol-mode');
+          container.classList.add('kekule-mode');
+        }
+        if (jsmolLabel) jsmolLabel.classList.remove('active');
+        if (kekuleLabel) kekuleLabel.classList.add('active');
+        if (currentMode) currentMode.textContent = 'Current Mode: Kekule.js (2D + 3D)';
+        
+        // Update status indicators
+        if (status2d) status2d.classList.remove('inactive');
+        if (status3d) status3d.classList.remove('inactive');
+        if (statusJsmol) statusJsmol.classList.add('inactive');
+        
+        console.log('Switched to Kekule mode');
+      }
+      
+      // Clear previous visualizations when switching modes
+      clearVisualizationContainers();
+    });
+  } else {
+    console.error('Visualization toggle not found!');
+  }
+});
+
+// Expose functions globally for use in interpreter
+window.getVisualizationMode = function() {
+  return isJSmolMode ? 'jsmol' : 'kekule';
+};
+
+window.updateVisualizationStatus = function(mode, active) {
+  const indicators = {
+    '2d': document.getElementById('status2d'),
+    '3d': document.getElementById('status3d'),
+    'jsmol': document.getElementById('statusJsmol')
+  };
+  
+  if (indicators[mode]) {
+    if (active) {
+      indicators[mode].classList.remove('inactive');
+    } else {
+      indicators[mode].classList.add('inactive');
+    }
+  }
+};
+
+window.clearVisualizationContainers = clearVisualizationContainers;
+
+
+//-----------------------------------------------------
+ 
 //To clear input
 document.getElementById("clear").onclick = function () {
   document.getElementById("input").value = "";

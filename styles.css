@@ -19,6 +19,31 @@
     margin-left: 40px;
 }
 
+.logo_text h1 {
+    background: linear-gradient(270deg, black, gold, black);
+    background-size: 600% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: textGradientFlow 18s ease-in-out infinite;
+    white-space: nowrap;
+    margin: 0;
+    padding: 0;
+}
+
+@keyframes textGradientFlow {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+
 .wrapper{
     background-color: #b9ebffbf;
     min-height: 100vh;
@@ -66,6 +91,13 @@ button{
     border-radius: 25px;
     border: 1px solid #b75e6c
 }
+
+.toggle-option {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #333;
+}
+
 
 button:hover{
     cursor: pointer;
@@ -172,50 +204,299 @@ button:hover{
 }
 
 
-#visualize_part{ 
-    width: 100%;
-    display: flex; 
+/* Visualization Controls */
+.visualization-controls {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border: 2px solid #ed7f91;
+    border-radius: 12px;
+    padding: 15px 20px;
+    margin: 15px 4%;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
     justify-content: space-between;
-    padding-left: 4%;
-    padding-right: 10%;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
-#visualize3d{
-    width: 600px;
-    border-radius: 50px;
-    height: 300px;
-    border: 1px solid #ccc;
-    background-color: #ffffff; 
-}
-
-#visualize {
-    width: 600px;
-    border-radius: 50px;
-    height: 300px;
-    border: 1px solid #ccc;
-    background-color: #ffffff; 
-}
-
-   .logo_text h1 {
-    background: linear-gradient(270deg, black, gold, black);
-    background-size: 600% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: textGradientFlow 18s ease-in-out infinite;
-    white-space: nowrap;
+.visualization-controls h3 {
+    color: #b75e6c;
+    font-size: 16px;
     margin: 0;
-    padding: 0;
-  }
+    white-space: nowrap;
+}
 
-  @keyframes textGradientFlow {
+.toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toggle-switch {
+    position: relative;
+    width: 60px;
+    height: 30px;
+    background-color: #ccc;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.toggle-switch.active {
+    background-color: #ed7f91;
+}
+
+.toggle-slider {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 24px;
+    height: 24px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.3s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.toggle-switch.active .toggle-slider {
+    transform: translateX(30px);
+}
+
+.toggle-label {
+    font-weight: bold;
+    color: #666;
+    font-size: 14px;
+    transition: color 0.3s;
+}
+
+.toggle-label.active {
+    color: #b75e6c;
+}
+
+.current-mode-info {
+    font-size: 13px;
+    color: #666;
+    background: rgba(237, 127, 145, 0.1);
+    padding: 6px 12px;
+    border-radius: 15px;
+    border: 1px solid rgba(237, 127, 145, 0.3);
+    white-space: nowrap;
+}
+
+
+#visualize_part {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 4%;
+    gap: 20px;
+}
+
+.visualization-container {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    transition: all 0.3s ease;
+}
+
+.viz-panel {
+    flex: 1;
+    min-height: 400px;
+    border-radius: 20px;
+    border: 2px solid #b75e6c;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    overflow: hidden;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.viz-panel-header {
+    background: linear-gradient(135deg, #ed7f91 0%, #b75e6c 100%);
+    color: white;
+    padding: 12px 20px;
+    font-weight: bold;
+    text-align: center;
+    position: relative;
+}
+
+.viz-panel-content {
+    padding: 10px;
+    height: calc(100% - 48px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+#visualize, #visualize3d {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 10px;
+    background-color: #ffffff;
+    position: relative;
+}
+
+/* JSmol specific container */
+#jsmolContainer {
+    width: 100%;
+    height: 100%;
+    background-color: #ffffff;
+    border-radius: 10px;
+    display: none;
+    position: relative;
+}
+
+/* Mode-specific visibility */
+.visualization-container.jsmol-mode #jsmolContainer {
+    display: block;
+}
+
+.visualization-container.jsmol-mode .viz-panel:not(:last-child) {
+    display: none;
+}
+
+.visualization-container.jsmol-mode .viz-panel:last-child {
+    flex: 2;
+    display: flex;
+}
+
+.visualization-container.kekule-mode #jsmolContainer {
+    display: none;
+}
+
+.visualization-container.kekule-mode .viz-panel:last-child {
+    display: none;
+}
+
+/* Status indicators */
+.status-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #4CAF50;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.inactive {
+    background-color: #ff6b6b;
+    box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+    animation: none;
+}
+
+@keyframes pulse {
     0% {
-      background-position: 0% 50%;
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
     }
-    50% {
-      background-position: 100% 50%;
+    
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
     }
+    
     100% {
-      background-position: 0% 50%;
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
     }
-  }
+}
+
+/* Loading animation */
+.loading-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #666;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #ed7f91;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Enhanced button styles for current mode indicator */
+.current-mode-info {
+    text-align: center;
+    font-size: 14px;
+    color: #666;
+    background: rgba(237, 127, 145, 0.1);
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 1px solid rgba(237, 127, 145, 0.3);
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+    .visualization-container {
+        flex-direction: column;
+    }
+    
+    .viz-panel {
+        min-height: 300px;
+    }
+    
+    .visualization-controls {
+        margin: 20px 2%;
+        padding: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .visualization-controls {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .visualization-controls h3 {
+        font-size: 14px;
+    }
+    
+    .current-mode-info {
+        font-size: 12px;
+    }
+}
+
+/* JSmol controls styling */
+#jsmolControls {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(237, 127, 145, 0.3) !important;
+}
+
+#jsmolControls button {
+    background: linear-gradient(135deg, #ed7f91, #b75e6c);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#jsmolControls button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}

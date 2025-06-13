@@ -418,30 +418,50 @@ export default class Interpretor {
   }
 
   visualize(input) {
-    if (!input || typeof input !== "string") {
-      this.outputCallback(
-        "visualize() expects a valid molecule string (e.g., 'C6H6')."
-      );
-      return;
-    }
-
-    this.outputCallback("Visualizing formula: " + input);
-
-    // Try multiple chemistry APIs to convert input to SMILES
-    this.tryMultipleAPIs(input).then((smiles) => {
-      if (smiles) {
-        this.outputCallback("Chemistry API returned SMILES: " + smiles);
-        this.renderMolecule(smiles);
-      } else {
-        this.outputCallback(
-          `Could not convert "${input}" to a valid molecular structure.`
-        );
-        this.outputCallback(
-          "Please try a different notation or a common chemical name."
-        );
-      }
-    });
+  if (!input || typeof input !== "string") {
+    this.outputCallback(
+      "visualize() expects a valid molecule string (e.g., 'C6H6')."
+    );
+    return;
   }
+
+  this.outputCallback("Visualizing formula: " + input);
+
+  // Try multiple chemistry APIs to convert input to SMILES
+  this.tryMultipleAPIs(input).then((smiles) => {
+    if (smiles) {
+      this.outputCallback("Chemistry API returned SMILES: " + smiles);
+
+      // Check current visualization mode
+      const currentMode = window.getVisualizationMode ? window.getVisualizationMode() : 'kekule';
+      
+      if (currentMode === 'jsmol') {
+        this.outputCallback("Rendering with JSmol...");
+        this.renderWithJSmol(smiles);
+        // Update status indicator
+        if (window.updateVisualizationStatus) {
+          window.updateVisualizationStatus('jsmol', true);
+        }
+      } else {
+        this.outputCallback("Rendering with Kekule.js...");
+        this.renderMolecule(smiles);
+        // Update status indicators
+        if (window.updateVisualizationStatus) {
+          window.updateVisualizationStatus('2d', true);
+          window.updateVisualizationStatus('3d', true);
+        }
+      }
+
+    } else {
+      this.outputCallback(
+        `Could not convert "${input}" to a valid molecular structure.`
+      );
+      this.outputCallback(
+        "Please try a different notation or a common chemical name."
+      );
+    }
+  });
+}
 
   // Try multiple APIs in sequence
   async tryMultipleAPIs(input) {
@@ -577,92 +597,89 @@ export default class Interpretor {
   }
 
   renderMolecule(smiles) {
-    if (!smiles) {
-      this.outputCallback("No valid SMILES to render.");
-      return;
-    }
-
-    this.outputCallback("Rendering SMILES: " + smiles);
-
-    initRDKitModule()
-      .then((RDKit) => {
-        try {
-          this.outputCallback("Creating molecule from SMILES...");
-          const mol = RDKit.get_mol(smiles);
-
-          if (!mol) {
-            this.outputCallback("RDKit failed to create molecule.");
-            return;
-          }
-
-          try {
-            const atomCount = mol.get_num_atoms();
-            this.outputCallback(
-              `Molecule created successfully with ${atomCount} atoms`
-            );
-          } catch (e) {
-            this.outputCallback("Failed to get atom count: " + e.message);
-          }
-
-          const molBlock = mol.get_molblock();
-          this.outputCallback("MolBlock created successfully");
-
-          try {
-            this.outputCallback("Loading into Kekule.js...");
-            const kekuleMol = Kekule.IO.loadFormatData(molBlock, "mol");
-            const parentElem = document.getElementById("visualize");
-
-            Kekule.DomUtils.clearChildContent(parentElem);
-            this.outputCallback("Cleared visualization area");
- 
-            this.outputCallback("Set visualization area styles");
-
-            this.outputCallback("Creating Viewer...");
-            const viewer2d = new Kekule.ChemWidget.Viewer(parentElem);
-            viewer2d.setChemObj(kekuleMol);
-            viewer2d.setRenderType(Kekule.Render.RendererType.R2D);  
-            viewer2d.setPredefinedSetting('fullFunc');
-            viewer2d.setMoleculeDisplayType(Kekule.Render.Molecule2DDisplayType.ATOM_SYMBOL); 
-            var color2DConfigs = viewer2d.getRenderConfigs().getColorConfigs();
-            color2DConfigs.setAtomColor('#A00000').setBondColor('#000000');  // set the default color for atoms and bonds
-            color2DConfigs.setGlyphStrokeColor('#C0C0C0');  
-            color2DConfigs.setLabelColor('#C0C0C0'); 
-
-            viewer2d.setEnableToolbar(true);  
-            
-            viewer2d.repaint();
- 
-            this.outputCallback(`Visualization complete. SMILES: ${smiles}`);
-
-            const statusDiv = document.createElement("div");
-            statusDiv.textContent =
-              "Visualization attempt complete - check area below";
-            statusDiv.style.color = "blue";
-            statusDiv.style.fontWeight = "bold";
-            document.getElementById("output").appendChild(statusDiv);
-
-            var parentElem3d = document.getElementById('visualize3d');
-            Kekule.DomUtils.clearChildContent(parentElem3d);
-            var viewer3d = new Kekule.ChemWidget.Viewer(parentElem3d);
-            viewer3d.setRenderType(Kekule.Render.RendererType.R3D);  // Use 3D render
-            viewer3d.setChemObj(kekuleMol);  // Assign molecule
-            viewer3d.setEnableToolbar(true);  // Optional UI toolbar
-            viewer3d.setPredefinedSetting('ballStick');   
-            var display3DConfigs = viewer3d.getRenderConfigs().getMoleculeDisplayConfigs();
-            display3DConfigs.setDefAtomColor('#FFFFFF').setDefBondColor('#A0A000');
-            display3DConfigs.setUseAtomSpecifiedColor(false);  // turn off this to take the color to effect
-            viewer3d.requestRepaint();   
-          } catch (e) {
-            this.outputCallback(`Error in Kekule rendering: ${e.message}`);
-          }
-        } catch (e) {
-          this.outputCallback(`Error creating molecule: ${e.message}`);
-        }
-      })
-      .catch((err) => {
-        this.outputCallback(`RDKit initialization error: ${err.message}`);
-      });
+  if (!smiles) {
+    this.outputCallback("No valid SMILES to render.");
+    return;
   }
+
+  this.outputCallback("Rendering SMILES: " + smiles);
+
+  initRDKitModule()
+    .then((RDKit) => {
+      try {
+        this.outputCallback("Creating molecule from SMILES...");
+        const mol = RDKit.get_mol(smiles);
+
+        if (!mol) {
+          this.outputCallback("RDKit failed to create molecule.");
+          return;
+        }
+
+        const atomCount = mol.get_num_atoms();
+        this.outputCallback(
+          `Molecule created successfully with ${atomCount} atoms`
+        );
+
+        const molBlock = mol.get_molblock();
+        this.outputCallback("MolBlock created successfully");
+
+        try {
+          this.outputCallback("Loading into Kekule.js...");
+          const kekuleMol = Kekule.IO.loadFormatData(molBlock, "mol");
+          
+          // Render 2D view
+          const parentElem2D = document.getElementById("visualize");
+          Kekule.DomUtils.clearChildContent(parentElem2D);
+
+          const viewer2d = new Kekule.ChemWidget.Viewer(parentElem2D);
+          viewer2d.setChemObj(kekuleMol);
+          viewer2d.setRenderType(Kekule.Render.RendererType.R2D);  
+          viewer2d.setPredefinedSetting('fullFunc');
+          viewer2d.setMoleculeDisplayType(Kekule.Render.Molecule2DDisplayType.SKELETAL);
+          
+          // Enhanced 2D styling
+          var color2DConfigs = viewer2d.getRenderConfigs().getColorConfigs();
+          color2DConfigs.setAtomColor('#2c3e50').setBondColor('#34495e');
+          color2DConfigs.setGlyphStrokeColor('#7f8c8d');
+          color2DConfigs.setLabelColor('#2c3e50');
+
+          viewer2d.setEnableToolbar(true);
+          viewer2d.repaint();
+
+          // Render 3D view
+          const parentElem3D = document.getElementById('visualize3d');
+          Kekule.DomUtils.clearChildContent(parentElem3D);
+          
+          const viewer3d = new Kekule.ChemWidget.Viewer(parentElem3D);
+          viewer3d.setRenderType(Kekule.Render.RendererType.R3D);
+          viewer3d.setChemObj(kekuleMol);
+          viewer3d.setEnableToolbar(true);
+          viewer3d.setPredefinedSetting('ballStick');
+          
+          // Enhanced 3D styling
+          var display3DConfigs = viewer3d.getRenderConfigs().getMoleculeDisplayConfigs();
+          display3DConfigs.setDefAtomColor('#ecf0f1').setDefBondColor('#3498db');
+          display3DConfigs.setUseAtomSpecifiedColor(false);
+          
+          viewer3d.requestRepaint();
+
+          this.outputCallback(`Visualization complete. SMILES: ${smiles}`);
+
+        } catch (e) {
+          this.outputCallback(`Error in Kekule rendering: ${e.message}`);
+          if (window.updateVisualizationStatus) {
+            window.updateVisualizationStatus('2d', false);
+            window.updateVisualizationStatus('3d', false);
+          }
+        }
+      } catch (e) {
+        this.outputCallback(`Error creating molecule: ${e.message}`);
+      }
+    })
+    .catch((err) => {
+      this.outputCallback(`RDKit initialization error: ${err.message}`);
+    });
+}
 
   getVolumeFromMass(mass, density) {
     const m = this.ensureNumber(mass, "mass");
@@ -831,5 +848,110 @@ export default class Interpretor {
     }
     return value;
   }
+
+  renderWithJSmol(smiles) {
+  if (!smiles) {
+    this.outputCallback("No valid SMILES to render for JSmol.");
+    return;
+  }
+
+  this.outputCallback("Initializing JSmol with enhanced features...");
+
+  const Info = {
+    width: "100%",
+    height: "100%",
+    use: "HTML5",
+    j2sPath: "https://chemapps.stolaf.edu/jmol/jsmol/j2s",
+    script: `
+      load $${smiles}; 
+      background white;
+      set antialiasDisplay true;
+      set ambientPercent 20;
+      set diffusePercent 80;
+      set specular true;
+      set specularPercent 10;
+      set spinX 1; set spinY 1; set spinZ 0;
+      spin on;
+      set frank off;
+      color bonds lightgray;
+      spacefill 20%;
+      wireframe 0.15;
+    `,
+    debug: false,
+    disableInitialConsole: true,
+    disableJ2SLoadMonitor: true,
+    readyFunction: function(applet) {
+      console.log("JSmol applet is ready");
+      if (window.updateVisualizationStatus) {
+        window.updateVisualizationStatus('jsmol', true);
+      }
+    },
+    loadStructCallback: function(applet, fullPathName, fileName, modelName, errorMsg, ptLoad) {
+      if (errorMsg) {
+        console.error("JSmol load error:", errorMsg);
+        if (window.updateVisualizationStatus) {
+          window.updateVisualizationStatus('jsmol', false);
+        }
+      } else {
+        console.log("JSmol structure loaded successfully");
+      }
+    }
+  };
+
+  const jsmolContainer = document.getElementById("jsmolContainer");
+  jsmolContainer.innerHTML = "";  // clear previous
+  
+  try {
+    jsmolContainer.innerHTML = Jmol.getAppletHtml("jsmolApplet0", Info);
+    this.outputCallback("JSmol visualization initialized successfully.");
+    
+    // Add some interactive controls
+    setTimeout(() => {
+      this.addJSmolControls();
+    }, 2000);
+    
+  } catch (error) {
+    this.outputCallback(`JSmol initialization error: ${error.message}`);
+    if (window.updateVisualizationStatus) {
+      window.updateVisualizationStatus('jsmol', false);
+    }
+  }
 }
 
+addJSmolControls() {
+  try {
+    // Create control panel if it doesn't exist
+    let controlPanel = document.getElementById('jsmolControls');
+    if (!controlPanel) {
+      controlPanel = document.createElement('div');
+      controlPanel.id = 'jsmolControls';
+      controlPanel.style.cssText = `
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(255,255,255,0.9);
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        font-size: 12px;
+        z-index: 1000;
+      `;
+      
+      controlPanel.innerHTML = `
+        <div style="margin-bottom: 8px; font-weight: bold;">JSmol Controls:</div>
+        <button onclick="Jmol.script(jsmolApplet0, 'spin on')" style="margin: 2px; padding: 4px 8px; font-size: 11px;">Spin On</button>
+        <button onclick="Jmol.script(jsmolApplet0, 'spin off')" style="margin: 2px; padding: 4px 8px; font-size: 11px;">Spin Off</button><br>
+        <button onclick="Jmol.script(jsmolApplet0, 'spacefill 100%')" style="margin: 2px; padding: 4px 8px; font-size: 11px;">Space Fill</button>
+        <button onclick="Jmol.script(jsmolApplet0, 'wireframe only')" style="margin: 2px; padding: 4px 8px; font-size: 11px;">Wireframe</button><br>
+        <button onclick="Jmol.script(jsmolApplet0, 'spacefill 20%; wireframe 0.15')" style="margin: 2px; padding: 4px 8px; font-size: 11px;">Ball & Stick</button>
+      `;
+      
+      const jsmolContainer = document.getElementById("jsmolContainer");
+      jsmolContainer.style.position = 'relative';
+      jsmolContainer.appendChild(controlPanel);
+    }
+  } catch (error) {
+    console.error("Error adding JSmol controls:", error);
+  }
+}
+}

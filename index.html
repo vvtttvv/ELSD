@@ -10,6 +10,23 @@
         <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/kekule/dist/themes/default/kekule.css" />
         <script src="https://cdn.jsdelivr.net/npm/kekule/dist/kekule.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/openchemlib/dist/openchemlib-full.min.js"></script>
+        
+        <!-- Alternative JSmol CDN - more reliable -->
+        <script type="text/javascript">
+            // JSmol configuration - set before loading
+            jmolInitialize = function() {
+                console.log("JSmol initialized successfully");
+            };
+        </script>
+        <script type="text/javascript" src="https://www.stolaf.edu/academics/chemapps/jmol/jsmol/JSmol.min.js"></script>
+        
+        <!-- Fallback JSmol if first one fails -->
+        <script type="text/javascript">
+            if (typeof Jmol === 'undefined') {
+                console.log("Primary JSmol failed, trying fallback...");
+                document.write('<script src="https://chemapps.stolaf.edu/jmol/jsmol/JSmol.min.js"><\/script>');
+            }
+        </script>
     </head>
     <body>
         <div class="wrapper">
@@ -40,9 +57,71 @@
                 </div>
                 </div>
             </div>
+
+            <div class="visualization-controls">
+                <h3>🔬 Molecular Visualization Settings</h3>
+                <div class="toggle-container">
+                    <span class="toggle-label active" id="kekuleLabel">Kekule.js</span>
+                    <div class="toggle-switch" id="visualizationToggle">
+                        <div class="toggle-slider"></div>
+                    </div>
+                    <span class="toggle-label" id="jsmolLabel">JSmol</span>
+                </div>
+                <div class="current-mode-info">
+                    <span id="currentMode">Current Mode: Kekule.js (2D + 3D)</span>
+                </div>
+            </div>
+
             <div id="visualize_part">
-                <div id="visualize"></div>
-                <div id="visualize3d"></div>
+                <div class="visualization-container kekule-mode" id="visualizationContainer">
+                    <!-- 2D Panel (Kekule only) -->
+                    <div class="viz-panel">
+                        <div class="viz-panel-header">
+                            2D Structure View
+                            <div class="status-indicator" id="status2d"></div>
+                        </div>
+                        <div class="viz-panel-content">
+                            <div id="visualize">
+                                <div class="loading-placeholder">
+                                    <div class="loading-spinner"></div>
+                                    <p>Ready for 2D visualization</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3D Panel (Kekule) -->
+                    <div class="viz-panel">
+                        <div class="viz-panel-header">
+                            3D Structure View
+                            <div class="status-indicator" id="status3d"></div>
+                        </div>
+                        <div class="viz-panel-content">
+                            <div id="visualize3d">
+                                <div class="loading-placeholder">
+                                    <div class="loading-spinner"></div>
+                                    <p>Ready for 3D visualization</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- JSmol Container (shown only in JSmol mode) -->
+                    <div class="viz-panel" style="flex: 2;">
+                        <div class="viz-panel-header">
+                            JSmol Interactive View
+                            <div class="status-indicator inactive" id="statusJsmol"></div>
+                        </div>
+                        <div class="viz-panel-content">
+                            <div id="jsmolContainer">
+                                <div class="loading-placeholder">
+                                    <div class="loading-spinner"></div>
+                                    <p>Ready for JSmol visualization</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
  
