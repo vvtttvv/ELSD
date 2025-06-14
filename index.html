@@ -90,16 +90,77 @@
                     </div>
 
                     <!-- JSmol Container (shown only in JSmol mode) -->
-                    <div class="viz-panel" style="flex: 2;">
-                        <div class="viz-panel-header">
-                            JSmol Interactive View
-                            <div class="status-indicator inactive" id="statusJsmol"></div>
-                        </div>
-                        <div class="viz-panel-content">
-                            <div id="jsmolContainer">
-                                <div class="loading-placeholder">
-                                    <div class="loading-spinner"></div>
-                                    <p>Ready for JSmol visualization</p>
+                    <div class="viz-panel jsmol-main-panel">
+                        <div class="jsmol-content-wrapper">
+                            <div class="jsmol-header-centered">
+                                <h3>🧪 JSmol Interactive Molecular Viewer</h3>
+                            </div>
+                            <div class="jsmol-layout">
+                                <!-- JSmol Viewer Panel -->
+                                <div class="jsmol-viewer-panel">
+                                    <div class="jsmol-viewer-header">
+                                        3D Interactive View
+                                        <div class="status-indicator inactive" id="statusJsmol"></div>
+                                    </div>
+                                    <div class="jsmol-viewer-content">
+                                        <div id="jsmolContainer">
+                                            <div class="loading-placeholder">
+                                                <div class="loading-spinner"></div>
+                                                <p>Ready for JSmol visualization</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Control Panel -->
+                                <div class="jsmol-control-panel">
+                                    <h4>🎛️ Visualization Controls</h4>
+                                    <div class="jsmol-control-content">
+                                        <div class="control-section">
+                                            <h5>Representation</h5>
+                                            <div class="control-buttons">
+                                                <button onclick="setJSmolStyle('ballAndStick')" class="control-btn active" id="ballStickBtn">Ball & Stick</button>
+                                                <button onclick="setJSmolStyle('stick')" class="control-btn" id="stickBtn">Stick</button>
+                                                <button onclick="setJSmolStyle('spacefill')" class="control-btn" id="spacefillBtn">Spacefill</button>
+                                                <button onclick="setJSmolStyle('wireframe')" class="control-btn" id="wireframeBtn">Wireframe</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-section">
+                                            <h5>Background</h5>
+                                            <div class="control-buttons">
+                                                <button onclick="setJSmolBackground('white')" class="control-btn active" id="whiteBgBtn">White</button>
+                                                <button onclick="setJSmolBackground('black')" class="control-btn" id="blackBgBtn">Black</button>
+                                                <button onclick="setJSmolBackground('gray')" class="control-btn" id="grayBgBtn">Gray</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-section">
+                                            <h5>Quality</h5>
+                                            <div class="control-buttons">
+                                                <button onclick="toggleJSmolQuality()" class="control-btn" id="qualityBtn">High Quality</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-section">
+                                            <h5>Tools</h5>
+                                            <div class="control-buttons">
+                                                <button onclick="enableJSmolMeasurement('distance')" class="control-btn" id="distanceBtn">Distance</button>
+                                                <button onclick="enableJSmolMeasurement('angle')" class="control-btn" id="angleBtn">Angle</button>
+                                                <button onclick="enableJSmolMeasurement('torsion')" class="control-btn" id="torsionBtn">Torsion</button>
+                                                <button onclick="toggleJSmolCharges()" class="control-btn" id="chargeBtn">Show Charges</button>
+                                                <button onclick="clearJSmolMeasurements()" class="control-btn" id="clearBtn">Clear</button>
+                                                <button onclick="resetJSmolView()" class="control-btn" id="resetBtn">Reset View</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-section">
+                                            <h5>Export</h5>
+                                            <div class="control-buttons">
+                                                <button onclick="exportJSmolImage()" class="control-btn" id="exportBtn">Save Image</button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

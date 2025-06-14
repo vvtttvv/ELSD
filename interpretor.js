@@ -700,8 +700,8 @@ async renderWithJSmol(smiles) {
   jsmolContainer.innerHTML = "";
   const appletId = "jsmolApplet_" + Date.now();
   const info = {
-    width: 500,
-    height: 500,
+    width: 600,
+    height: 600,
     use: "HTML5",
     j2sPath: "./jsmol/j2s",
     debug: false,
@@ -714,6 +714,35 @@ async renderWithJSmol(smiles) {
       
       Jmol.script(applet, script);
       this.outputCallback("Molecule loaded!");
+      
+      // Set initial button states
+      setTimeout(() => {
+        // Set Ball & Stick as active (default representation)
+        const ballStickBtn = document.getElementById('ballStickBtn');
+        if (ballStickBtn) {
+          document.querySelectorAll('#ballStickBtn, #stickBtn, #spacefillBtn, #wireframeBtn').forEach(btn => {
+            btn.classList.remove('active');
+          });
+          ballStickBtn.classList.add('active');
+        }
+        
+        // Set White background as active (default background)
+        const whiteBgBtn = document.getElementById('whiteBgBtn');
+        if (whiteBgBtn) {
+          document.querySelectorAll('#whiteBgBtn, #blackBgBtn, #grayBgBtn').forEach(btn => {
+            btn.classList.remove('active');
+          });
+          whiteBgBtn.classList.add('active');
+        }
+        
+        // Set High Quality as active (default quality)
+        const qualityBtn = document.getElementById('qualityBtn');
+        if (qualityBtn) {
+          qualityBtn.classList.add('active');
+          qualityBtn.textContent = 'High Quality ✓';
+        }
+      }, 500);
+      
       if (window.updateVisualizationStatus) {
         window.updateVisualizationStatus("jsmol", true);
       }
