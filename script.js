@@ -567,64 +567,80 @@ if (possible("C6H6" + variable)) {
 
 // JSmol Control Functions
 window.setJSmolStyle = function(style) {
+    console.log('setJSmolStyle called with:', style);
+    console.log('currentJsmolApplet:', window.currentJsmolApplet);
+    console.log('Jmol available:', typeof Jmol !== 'undefined');
+    
     if (!window.currentJsmolApplet || typeof Jmol === 'undefined') {
-        console.warn('JSmol not ready');
+        console.warn('JSmol not ready - applet:', !!window.currentJsmolApplet, 'Jmol:', typeof Jmol !== 'undefined');
         return;
     }
 
-    document.querySelectorAll('#ballStickBtn, #stickBtn, #spacefillBtn, #wireframeBtn').forEach(btn => {
-        btn.classList.remove('active');
-    });
+    try {
+        document.querySelectorAll('#ballStickBtn, #stickBtn, #spacefillBtn, #wireframeBtn').forEach(btn => {
+            btn.classList.remove('active');
+        });
 
-    let script = '';
-    switch(style) {
-        case 'ballAndStick':
-            script = 'spacefill 20%; wireframe 0.15; color atoms cpk;';
-            document.getElementById('ballStickBtn').classList.add('active');
-            console.log('Ball & Stick representation applied');
-            break;
-        case 'stick':
-            script = 'spacefill off; wireframe 0.3; color atoms cpk;';
-            document.getElementById('stickBtn').classList.add('active');
-            console.log('Stick representation applied');
-            break;
-        case 'spacefill':
-            script = 'spacefill 100%; wireframe off; color atoms cpk;';
-            document.getElementById('spacefillBtn').classList.add('active');
-            console.log('Spacefill representation applied');
-            break;
-        case 'wireframe':
-            script = 'spacefill off; wireframe 0.05; color atoms cpk;';
-            document.getElementById('wireframeBtn').classList.add('active');
-            console.log('Wireframe representation applied');
-            break;
+        let script = '';
+        switch(style) {
+            case 'ballAndStick':
+                script = 'spacefill 20%; wireframe 0.15; color atoms cpk;';
+                document.getElementById('ballStickBtn').classList.add('active');
+                console.log('Ball & Stick representation applied');
+                break;
+            case 'stick':
+                script = 'spacefill off; wireframe 0.3; color atoms cpk;';
+                document.getElementById('stickBtn').classList.add('active');
+                console.log('Stick representation applied');
+                break;
+            case 'spacefill':
+                script = 'spacefill 100%; wireframe off; color atoms cpk;';
+                document.getElementById('spacefillBtn').classList.add('active');
+                console.log('Spacefill representation applied');
+                break;
+            case 'wireframe':
+                script = 'spacefill off; wireframe 0.05; color atoms cpk;';
+                document.getElementById('wireframeBtn').classList.add('active');
+                console.log('Wireframe representation applied');
+                break;
+        }
+        
+        console.log('Executing JSmol script:', script);
+        Jmol.script(window.currentJsmolApplet, script);
+    } catch (error) {
+        console.error('Error in setJSmolStyle:', error);
     }
-    
-    Jmol.script(window.currentJsmolApplet, script);
 };
 
 window.setJSmolBackground = function(color) {
+    console.log('setJSmolBackground called with:', color);
+    
     if (!window.currentJsmolApplet || typeof Jmol === 'undefined') {
-        console.warn('JSmol not ready');
+        console.warn('JSmol not ready - applet:', !!window.currentJsmolApplet, 'Jmol:', typeof Jmol !== 'undefined');
         return;
     }
 
-    // Remove active class from all bg buttons
-    document.querySelectorAll('#whiteBgBtn, #blackBgBtn, #grayBgBtn').forEach(btn => {
-        btn.classList.remove('active');
-    });
+    try {
+        // Remove active class from all bg buttons
+        document.querySelectorAll('#whiteBgBtn, #blackBgBtn, #grayBgBtn').forEach(btn => {
+            btn.classList.remove('active');
+        });
 
-    const script = `background ${color};`;
-    Jmol.script(window.currentJsmolApplet, script);
-    
-    // Add active class to clicked button
-    const buttonId = color + 'BgBtn';
-    const targetButton = document.getElementById(buttonId);
-    if (targetButton) {
-        targetButton.classList.add('active');
+        const script = `background ${color};`;
+        console.log('Executing background script:', script);
+        Jmol.script(window.currentJsmolApplet, script);
+        
+        // Add active class to clicked button
+        const buttonId = color + 'BgBtn';
+        const targetButton = document.getElementById(buttonId);
+        if (targetButton) {
+            targetButton.classList.add('active');
+        }
+        
+        console.log(`Background color set to ${color}`);
+    } catch (error) {
+        console.error('Error in setJSmolBackground:', error);
     }
-    
-    console.log(`Background color set to ${color}`);
 };
 
 window.toggleJSmolQuality = function() {
@@ -738,33 +754,39 @@ window.clearJSmolMeasurements = function() {
         return;
     }
 
-    const script = 'measure delete; label off; set picking off; select none;';
-    Jmol.script(window.currentJsmolApplet, script);
-    
-    // Reset all measurement button states
-    const distanceBtn = document.getElementById('distanceBtn');
-    const angleBtn = document.getElementById('angleBtn');
-    const torsionBtn = document.getElementById('torsionBtn');
-    const chargeBtn = document.getElementById('chargeBtn');
-    
-    if (distanceBtn) {
-        distanceBtn.classList.remove('active');
-        distanceBtn.textContent = 'Distance';
+    try {
+        // Clear only measurements and labels - minimal commands to avoid breaking state
+        Jmol.script(window.currentJsmolApplet, 'measure delete;');
+        Jmol.script(window.currentJsmolApplet, 'label off;');
+        Jmol.script(window.currentJsmolApplet, 'set picking off;');
+        
+        // Reset measurement button states
+        const distanceBtn = document.getElementById('distanceBtn');
+        const angleBtn = document.getElementById('angleBtn');
+        const torsionBtn = document.getElementById('torsionBtn');
+        const chargeBtn = document.getElementById('chargeBtn');
+        
+        if (distanceBtn) {
+            distanceBtn.classList.remove('active');
+            distanceBtn.textContent = 'Distance';
+        }
+        if (angleBtn) {
+            angleBtn.classList.remove('active');
+            angleBtn.textContent = 'Angle';
+        }
+        if (torsionBtn) {
+            torsionBtn.classList.remove('active');
+            torsionBtn.textContent = 'Torsion';
+        }
+        if (chargeBtn) {
+            chargeBtn.classList.remove('active');
+            chargeBtn.textContent = 'Show Charges';
+        }
+        
+        console.log('Measurements and labels cleared');
+    } catch (error) {
+        console.error('Error in clearJSmolMeasurements:', error);
     }
-    if (angleBtn) {
-        angleBtn.classList.remove('active');
-        angleBtn.textContent = 'Angle';
-    }
-    if (torsionBtn) {
-        torsionBtn.classList.remove('active');
-        torsionBtn.textContent = 'Torsion';
-    }
-    if (chargeBtn) {
-        chargeBtn.classList.remove('active');
-        chargeBtn.textContent = 'Show Charges';
-    }
-    
-    console.log('All measurements and labels cleared');
 };
 
 window.resetJSmolView = function() {
@@ -773,83 +795,107 @@ window.resetJSmolView = function() {
         return;
     }
 
-    const script = 'reset; zoom 120; rotate best; set picking off; measure delete; label off; select none;';
-    Jmol.script(window.currentJsmolApplet, script);
-    
-    // Reset all measurement buttons
-    const distanceBtn = document.getElementById('distanceBtn');
-    const angleBtn = document.getElementById('angleBtn');
-    const torsionBtn = document.getElementById('torsionBtn');
-    const chargeBtn = document.getElementById('chargeBtn');
-    
-    if (distanceBtn) {
-        distanceBtn.classList.remove('active');
-        distanceBtn.textContent = 'Distance';
+    try {
+        // Reset view position only - separate commands to avoid conflicts
+        Jmol.script(window.currentJsmolApplet, 'zoom 120;');
+        Jmol.script(window.currentJsmolApplet, 'rotate best;');
+        Jmol.script(window.currentJsmolApplet, 'center;');
+        
+        // Clear measurements and picking separately
+        Jmol.script(window.currentJsmolApplet, 'measure delete;');
+        Jmol.script(window.currentJsmolApplet, 'label off;');
+        Jmol.script(window.currentJsmolApplet, 'set picking off;');
+        
+        // Reset measurement button states
+        const distanceBtn = document.getElementById('distanceBtn');
+        const angleBtn = document.getElementById('angleBtn');
+        const torsionBtn = document.getElementById('torsionBtn');
+        const chargeBtn = document.getElementById('chargeBtn');
+        
+        if (distanceBtn) {
+            distanceBtn.classList.remove('active');
+            distanceBtn.textContent = 'Distance';
+        }
+        if (angleBtn) {
+            angleBtn.classList.remove('active');
+            angleBtn.textContent = 'Angle';
+        }
+        if (torsionBtn) {
+            torsionBtn.classList.remove('active');
+            torsionBtn.textContent = 'Torsion';
+        }
+        if (chargeBtn) {
+            chargeBtn.classList.remove('active');
+            chargeBtn.textContent = 'Show Charges';
+        }
+        
+        console.log('JSmol view reset');
+    } catch (error) {
+        console.error('Error in resetJSmolView:', error);
     }
-    if (angleBtn) {
-        angleBtn.classList.remove('active');
-        angleBtn.textContent = 'Angle';
-    }
-    if (torsionBtn) {
-        torsionBtn.classList.remove('active');
-        torsionBtn.textContent = 'Torsion';
-    }
-    if (chargeBtn) {
-        chargeBtn.classList.remove('active');
-        chargeBtn.textContent = 'Show Charges';
-    }
-    
-    console.log('JSmol view reset to default');
 };
 
 window.exportJSmolImage = function() {
+    console.log('exportJSmolImage called');
+    
     if (!window.currentJsmolApplet || typeof Jmol === 'undefined') {
-        console.warn('JSmol not ready');
+        console.warn('JSmol not ready - applet:', !!window.currentJsmolApplet, 'Jmol:', typeof Jmol !== 'undefined');
         return;
     }
 
     try {
-        // Get the image data from JSmol
-        const imageData = Jmol.getPropertyAsString(window.currentJsmolApplet, "image");
+        console.log('Attempting to export JSmol image...');
         
-        if (imageData && imageData.startsWith('data:image')) {
-            // Create download link
+        // Method 1: Try to get image as base64 data URL directly
+        const imageData = Jmol.evaluateVar(window.currentJsmolApplet, 'write("IMAGE")');
+        console.log('JSmol image data type:', typeof imageData);
+        
+        if (imageData && typeof imageData === 'string' && imageData.startsWith('data:image')) {
+            console.log('Got valid image data, creating download...');
             const link = document.createElement('a');
-            link.download = 'molecule_jsmol.png';
+            link.download = 'molecule_' + new Date().getTime() + '.png';
             link.href = imageData;
             
-            // Trigger download
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             
-            console.log('Image exported successfully');
-        } else {
-            // Fallback method - use JSmol's built-in write command
-            const script = 'write IMAGE PNG';
-            Jmol.script(window.currentJsmolApplet, script);
-            console.log('Image export initiated via JSmol command');
+            console.log('Image exported successfully via evaluateVar');
+            return;
         }
+        
+        // Method 2: Try canvas-based export
+        console.log('Trying canvas-based export...');
+        const canvas = document.querySelector('#jsmolContainer canvas');
+        if (canvas) {
+            console.log('Canvas found, converting to data URL...');
+            const dataURL = canvas.toDataURL('image/png');
+            
+            const link = document.createElement('a');
+            link.download = 'molecule_' + new Date().getTime() + '.png';
+            link.href = dataURL;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            console.log('Image exported successfully via canvas');
+            return;
+        }
+        
+        // Method 3: Use JSmol's popup write dialog as fallback
+        console.log('Using JSmol popup dialog fallback...');
+        Jmol.script(window.currentJsmolApplet, 'write IMAGE PNG "molecule.png"');
+        console.log('JSmol write dialog should appear');
+        
     } catch (error) {
-        console.error('Error exporting image:', error);
-        // Last resort - try alternative method
-        try {
-            const canvas = document.querySelector('#jsmolContainer canvas');
-            if (canvas) {
-                const link = document.createElement('a');
-                link.download = 'molecule_jsmol.png';
-                link.href = canvas.toDataURL('image/png');
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                console.log('Image exported via canvas method');
-            } else {
-                alert('Unable to export image. Please try right-clicking on the molecule and selecting "Save Image".');
-            }
-        } catch (canvasError) {
-            console.error('Canvas export also failed:', canvasError);
-            alert('Image export failed. Please try right-clicking on the molecule and selecting "Save Image".');
-        }
+        console.error('Error in exportJSmolImage:', error);
+        
+        // Final fallback - show user instruction
+        alert('Image export encountered an issue. You can:\n\n' +
+              '1. Right-click on the molecule and select "Save Image As..."\n' +
+              '2. Or use the JSmol menu (right-click) → File → Export Image\n' +
+              '3. Or take a screenshot of the molecule area');
     }
 };
 
