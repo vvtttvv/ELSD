@@ -717,7 +717,9 @@ window.toggleJSmolCharges = function() {
         console.log('Charges hidden');
     } else {
         // Show charges - using calculated partial charges
+        // Reset label state first to ensure it works after clear
         const script = `
+            label off;
             calculate partialCharge;
             label on;
             set labelOffset 0 0;
