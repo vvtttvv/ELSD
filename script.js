@@ -124,7 +124,7 @@ function insertJSmolApplet() {
   // Create the applet
   const applet = Jmol.getApplet("jsmolApplet", Info);
   jsmolContainer.innerHTML = Jmol.getAppletHtml(applet);
-  window.currentJsmolApplet = applet; // Ensure global reference is set
+  window.currentJsmolApplet = applet; 
 }
 
 //-----------------------------------------------------
@@ -221,9 +221,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
           }
         }
-        // Clear previous visualizations before inserting the JSmol applet
+
         clearVisualizationContainers();
-        // Add a short delay to ensure the container is visible and sized
         setTimeout(() => {
           insertJSmolApplet();
         }, 100);
@@ -573,7 +572,6 @@ window.setJSmolStyle = function(style) {
         return;
     }
 
-    // Remove active class from all style buttons
     document.querySelectorAll('#ballStickBtn, #stickBtn, #spacefillBtn, #wireframeBtn').forEach(btn => {
         btn.classList.remove('active');
     });
@@ -717,7 +715,6 @@ window.toggleJSmolCharges = function() {
         console.log('Charges hidden');
     } else {
         // Show charges - using calculated partial charges
-        // Reset label state first to ensure it works after clear
         const script = `
             label off;
             calculate partialCharge;

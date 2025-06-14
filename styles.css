@@ -445,7 +445,7 @@ button:hover{
     100% { transform: rotate(360deg); }
 }
 
-/* Enhanced button styles for current mode indicator */
+/* Button styles for current mode indicator */
 .current-mode-info {
     text-align: center;
     font-size: 14px;
@@ -526,7 +526,7 @@ button:hover{
     display: none !important;
 }
 
-/* Enhanced JSmol Layout */
+/* JSmol Layout */
 .jsmol-main-panel {
     flex: 1 !important;
     width: 100% !important;
@@ -575,7 +575,7 @@ button:hover{
     flex: 1;
 }
 
-/* JSmol Viewer Panel - Styled like Kekule panels */
+/* JSmol Viewer Panel */
 .jsmol-viewer-panel {
     flex: 2;
     min-height: 650px;
@@ -623,7 +623,7 @@ button:hover{
     margin: 0;
 }
 
-/* Control Panel - Styled like Kekule panels */
+/* Control Panel */
 .jsmol-control-panel {
     flex: 1;
     min-width: 300px;

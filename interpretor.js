@@ -709,7 +709,6 @@ async renderWithJSmol(smiles) {
       this.outputCallback("JSmol applet ready. Loading molecule...");
       console.log("MOL block for JSmol:", molBlock);
       
-      // Fixed JSmol script syntax
       const script = `load DATA "model"\n${molBlock}\nEND "model"; background white; set antialiasDisplay true; set ambient 40; set diffuse 80; set specular 80; set specularPower 40; color atoms cpk; spacefill 20%; wireframe 0.15; zoom 120; rotate best;`;
       
       Jmol.script(applet, script);
