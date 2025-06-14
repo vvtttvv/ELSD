@@ -10,23 +10,6 @@
         <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/kekule/dist/themes/default/kekule.css" />
         <script src="https://cdn.jsdelivr.net/npm/kekule/dist/kekule.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/openchemlib/dist/openchemlib-full.min.js"></script>
-        
-        <!-- Alternative JSmol CDN - more reliable -->
-        <script type="text/javascript">
-            // JSmol configuration - set before loading
-            jmolInitialize = function() {
-                console.log("JSmol initialized successfully");
-            };
-        </script>
-        <script type="text/javascript" src="https://www.stolaf.edu/academics/chemapps/jmol/jsmol/JSmol.min.js"></script>
-        
-        <!-- Fallback JSmol if first one fails -->
-        <script type="text/javascript">
-            if (typeof Jmol === 'undefined') {
-                console.log("Primary JSmol failed, trying fallback...");
-                document.write('<script src="https://chemapps.stolaf.edu/jmol/jsmol/JSmol.min.js"><\/script>');
-            }
-        </script>
     </head>
     <body>
         <div class="wrapper">

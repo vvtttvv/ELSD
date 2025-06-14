@@ -76,6 +76,56 @@ observer.observe(output, { childList: true });
 
 updateEmptyState();
 
+function loadJSmolLibrary() {
+  return new Promise((resolve, reject) => {
+    if (typeof Jmol !== 'undefined') {
+      resolve();
+      return;
+    }
+    
+    console.log("Loading local JSmol library...");
+    
+    // Load from local jsmol folder
+    const script = document.createElement('script');
+    script.src = './jsmol/JSmol.min.js';  // Local path
+    script.onload = () => {
+      console.log("JSmol loaded from local files");
+      // Jmol.setDocument(document); // Optional, can be kept or removed
+      resolve();
+    };
+    script.onerror = () => {
+      console.error("Failed to load local JSmol library");
+      reject(new Error("Failed to load local JSmol library"));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+// Function to insert JSmol applet into the container
+function insertJSmolApplet() {
+  const jsmolContainer = document.getElementById('jsmolContainer');
+  if (!jsmolContainer) return;
+
+  // Clear previous content
+  jsmolContainer.innerHTML = "";
+
+  // JSmol Info object
+  const Info = {
+    width: 400,
+    height: 400,
+    use: "HTML5",
+    j2sPath: "./jsmol/j2s",
+    script: "load $caffeine", // or any default molecule
+    debug: false,
+    disableJ2SLoadMonitor: true,
+    addSelectionOptions: false
+  };
+
+  // Create the applet
+  const applet = Jmol.getApplet("jsmolApplet", Info);
+  jsmolContainer.innerHTML = Jmol.getAppletHtml(applet);
+  window.currentJsmolApplet = applet; // Ensure global reference is set
+}
 
 //-----------------------------------------------------
 // VISUALIZATION TOGGLE FUNCTIONALITY
@@ -137,8 +187,8 @@ document.addEventListener('DOMContentLoaded', function() {
   if (status3d) status3d.classList.add('inactive');
   if (statusJsmol) statusJsmol.classList.add('inactive');
 
-  if (toggle) {
-    toggle.addEventListener('click', () => {
+   if (toggle) {
+    toggle.addEventListener('click', async () => {
       isJSmolMode = !isJSmolMode;
       
       console.log('Toggle clicked, new mode:', isJSmolMode ? 'JSmol' : 'Kekule');
@@ -154,10 +204,27 @@ document.addEventListener('DOMContentLoaded', function() {
         if (jsmolLabel) jsmolLabel.classList.add('active');
         if (currentMode) currentMode.textContent = 'Current Mode: JSmol (Interactive 3D)';
         
-        // Update status indicators
-        if (status2d) status2d.classList.add('inactive');
-        if (status3d) status3d.classList.add('inactive');
-        if (statusJsmol) statusJsmol.classList.remove('inactive');
+        // Ensure JSmol is loaded
+        if (typeof Jmol === 'undefined') {
+          console.log('Loading JSmol library...');
+          try {
+            await loadJSmolLibrary();
+            console.log('JSmol library loaded successfully');
+          } catch (error) {
+            console.error('Failed to load JSmol:', error);
+            alert('Failed to load JSmol library. Please check your internet connection.');
+            // Revert the toggle
+            isJSmolMode = false;
+            toggle.classList.remove('active');
+            return;
+          }
+        }
+        // Clear previous visualizations before inserting the JSmol applet
+        clearVisualizationContainers();
+        // Add a short delay to ensure the container is visible and sized
+        setTimeout(() => {
+          insertJSmolApplet();
+        }, 100);
         
         console.log('Switched to JSmol mode');
         
@@ -172,19 +239,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (kekuleLabel) kekuleLabel.classList.add('active');
         if (currentMode) currentMode.textContent = 'Current Mode: Kekule.js (2D + 3D)';
         
-        // Update status indicators
-        if (status2d) status2d.classList.remove('inactive');
-        if (status3d) status3d.classList.remove('inactive');
-        if (statusJsmol) statusJsmol.classList.add('inactive');
-        
         console.log('Switched to Kekule mode');
       }
       
       // Clear previous visualizations when switching modes
       clearVisualizationContainers();
     });
-  } else {
-    console.error('Visualization toggle not found!');
   }
 });
 

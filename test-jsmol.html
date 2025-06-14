@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="jsmol/JSmol.min.js"></script>
+</head>
+<body>
+  <div id="jsmolTest"></div>
+  <script>
+    var Info = {
+      width: 400,
+      height: 400,
+      use: "HTML5",
+      j2sPath: "jsmol/j2s",
+      script: "load $caffeine",
+      debug: true
+    };
+    document.getElementById('jsmolTest').innerHTML = Jmol.getAppletHtml("jsmolApplet", Info);
+  </script>
+</body>
+</html>
