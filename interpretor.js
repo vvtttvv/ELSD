@@ -10,6 +10,7 @@ import { solubilityTable } from "./chemistryData/core/solubilityTable.js";
 import { extractIons } from "./chemistryData/core/extractIons.js";
 import { ReactionAnalyzer } from "./chemistryData/reactionAnalyzer.js";
 import { balanceEquation } from "./chemistryData/equationBalancer.js";
+import { explainBalancingSteps } from "./chemistryData/explainBalancingSteps.js";
 import { isAcid as checkIfAcid } from "./chemistryData/compounds/acids/acidTypes.js";
 import { isBase as checkIfBase } from "./chemistryData/compounds/bases/baseTypes.js";
 
@@ -217,7 +218,7 @@ export default class Interpretor {
         console.log("Checking reaction possibility for:", args[0]);
         return this.isReactionPossible(args[0]);
       case "resolve":
-        return this.resolveReaction(args[0]);
+        return this.resolveReaction(args[0], args[1] || "balanced");
       case "getOxidixngs":
         return this.getOxidizingAgents(args[0]);
       case "getReducings":
@@ -401,18 +402,30 @@ export default class Interpretor {
     return analysis?.possible || false;
   }
 
-  resolveReaction(reactionString) {
+  resolveReaction(reactionString, mode = "balanced") {
     if (!this.reactionAnalyzer) {
-      // Pass parseFormula from Interpretor to ReactionAnalyzer
       this.reactionAnalyzer = new ReactionAnalyzer(
         this.parseFormula.bind(this)
       );
     }
-    console.log(reactionString);
-    console.log(this.reactionAnalyzer);
-    console.log(this.parseFormula);
+
+    if (mode === "raw") {
+      const [lhs, rhs] = reactionString.split("->");
+      const reactants = lhs ? lhs.split("+").map(r => r.trim()) : [];
+      const products = rhs ? rhs.split("+").map(p => p.trim()) : [];
+
+      return `Reactants: ${reactants.join(", ")} <br> Products: ${products.join(", ")}`;
+    }
+
+
+    if (mode === "steps") {
+      return explainBalancingSteps(reactionString, this.parseFormula.bind(this));
+    }
+
+    // Default: balanced mode
     return balanceEquation(reactionString, this.parseFormula.bind(this));
   }
+
 
   getOxidizingAgents(reactionString) {
     const agents = this.findRedoxAgents(reactionString).oxidizing;
