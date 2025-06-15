@@ -626,8 +626,8 @@ button:hover{
 /* Control Panel */
 .jsmol-control-panel {
     flex: 1;
-    min-width: 300px;
-    max-width: 350px;
+    min-width: 450px;
+    max-width: 500px;
     min-height: 650px;
     border-radius: 20px;
     border: 2px solid #b75e6c;
@@ -655,6 +655,7 @@ button:hover{
     padding: 20px;
     overflow-y: auto;
     flex: 1;
+    max-height: 650px;
 }
 
 .control-section {
@@ -705,6 +706,66 @@ button:hover{
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* Two-column layout for controls */
+.control-columns {
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+}
+
+.control-column {
+    flex: 1;
+    min-width: 0; /* Allows column to shrink */
+}
+
+/* Ensure buttons in columns are appropriately sized */
+.control-column .control-btn {
+    font-size: 11px;
+    padding: 6px 8px;
+    min-height: 28px;
+}
+
+/* Molecule Info Panel Styling */
+.molecule-info {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 12px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    padding: 3px 0;
+}
+
+.info-item:last-child {
+    margin-bottom: 0;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #495057;
+    min-width: 50px;
+}
+
+.info-value {
+    color: #212529;
+    font-family: 'Courier New', monospace;
+    background-color: #ffffff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    font-size: 13px;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* Status indicator for JSmol viewer */
 .jsmol-viewer-header .status-indicator {
     position: absolute;
@@ -721,7 +782,7 @@ button:hover{
 /* JSmol mode specific adjustments */
 .visualization-container.jsmol-mode {
     width: 100%;
-    max-width: 1100px;
+    max-width: 1300px;
     margin: 0 auto;
     padding: 0 20px;
 }
@@ -765,5 +826,16 @@ button:hover{
     #jsmolContainer {
         max-width: 98vw;
         height: 320px;
+    }
+    
+    /* Stack columns on mobile */
+    .control-columns {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .control-column .control-btn {
+        font-size: 12px;
+        padding: 8px 10px;
     }
 }

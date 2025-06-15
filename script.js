@@ -124,7 +124,14 @@ function insertJSmolApplet() {
   // Create the applet
   const applet = Jmol.getApplet("jsmolApplet", Info);
   jsmolContainer.innerHTML = Jmol.getAppletHtml(applet);
-  window.currentJsmolApplet = applet; 
+  window.currentJsmolApplet = applet;
+  
+  // Update molecule info when applet is ready
+  setTimeout(() => {
+    if (typeof window.updateMoleculeInfo === 'function') {
+      window.updateMoleculeInfo();
+    }
+  }, 3000); 
 }
 
 //-----------------------------------------------------
@@ -755,10 +762,13 @@ window.clearJSmolMeasurements = function() {
     }
 
     try {
-        // Clear only measurements and labels - minimal commands to avoid breaking state
+        // Clear measurements, labels, surfaces, and dipoles - minimal commands to avoid breaking state
         Jmol.script(window.currentJsmolApplet, 'measure delete;');
         Jmol.script(window.currentJsmolApplet, 'label off;');
         Jmol.script(window.currentJsmolApplet, 'set picking off;');
+        Jmol.script(window.currentJsmolApplet, 'isosurface delete;');
+        Jmol.script(window.currentJsmolApplet, 'dipole delete;');
+        Jmol.script(window.currentJsmolApplet, 'vectors off;');
         
         // Reset measurement button states
         const distanceBtn = document.getElementById('distanceBtn');
@@ -781,6 +791,29 @@ window.clearJSmolMeasurements = function() {
         if (chargeBtn) {
             chargeBtn.classList.remove('active');
             chargeBtn.textContent = 'Show Charges';
+        }
+        
+        // Reset MEP surface and dipole button states
+        document.querySelectorAll('#mepLucentBtn, #mepOpaqueBtn, #mepOffBtn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Reset dipole button states
+        const bondDipolesBtn = document.getElementById('bondDipolesBtn');
+        const overallDipoleBtn = document.getElementById('overallDipoleBtn');
+        
+        if (bondDipolesBtn) {
+            bondDipolesBtn.classList.remove('active');
+            bondDipolesBtn.textContent = 'Bond Dipoles';
+        }
+        if (overallDipoleBtn) {
+            overallDipoleBtn.classList.remove('active');
+            overallDipoleBtn.textContent = 'Overall Dipole';
+        }
+        
+        // Clear stored molecule data to force fresh retrieval
+        if (typeof window.clearMoleculeData === 'function') {
+            window.clearMoleculeData();
         }
         
         console.log('Measurements and labels cleared');
@@ -801,10 +834,13 @@ window.resetJSmolView = function() {
         Jmol.script(window.currentJsmolApplet, 'rotate best;');
         Jmol.script(window.currentJsmolApplet, 'center;');
         
-        // Clear measurements and picking separately
+        // Clear measurements, picking, surfaces, and dipoles separately
         Jmol.script(window.currentJsmolApplet, 'measure delete;');
         Jmol.script(window.currentJsmolApplet, 'label off;');
         Jmol.script(window.currentJsmolApplet, 'set picking off;');
+        Jmol.script(window.currentJsmolApplet, 'isosurface delete;');
+        Jmol.script(window.currentJsmolApplet, 'dipole delete;');
+        Jmol.script(window.currentJsmolApplet, 'vectors off;');
         
         // Reset measurement button states
         const distanceBtn = document.getElementById('distanceBtn');
@@ -827,6 +863,29 @@ window.resetJSmolView = function() {
         if (chargeBtn) {
             chargeBtn.classList.remove('active');
             chargeBtn.textContent = 'Show Charges';
+        }
+        
+        // Reset MEP surface and dipole button states
+        document.querySelectorAll('#mepLucentBtn, #mepOpaqueBtn, #mepOffBtn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Reset dipole button states
+        const bondDipolesBtn = document.getElementById('bondDipolesBtn');
+        const overallDipoleBtn = document.getElementById('overallDipoleBtn');
+        
+        if (bondDipolesBtn) {
+            bondDipolesBtn.classList.remove('active');
+            bondDipolesBtn.textContent = 'Bond Dipoles';
+        }
+        if (overallDipoleBtn) {
+            overallDipoleBtn.classList.remove('active');
+            overallDipoleBtn.textContent = 'Overall Dipole';
+        }
+        
+        // Clear stored molecule data to force fresh retrieval
+        if (typeof window.clearMoleculeData === 'function') {
+            window.clearMoleculeData();
         }
         
         console.log('JSmol view reset');
@@ -897,6 +956,350 @@ window.exportJSmolImage = function() {
               '2. Or use the JSmol menu (right-click) → File → Export Image\n' +
               '3. Or take a screenshot of the molecule area');
     }
+};
+
+// MEP Surface Functions
+window.setJSmolMEP = function(mode) {
+    console.log('setJSmolMEP called with mode:', mode);
+    
+    if (!window.currentJsmolApplet || typeof Jmol === 'undefined') {
+        console.warn('JSmol not ready - applet:', !!window.currentJsmolApplet, 'Jmol:', typeof Jmol !== 'undefined');
+        return;
+    }
+
+    try {
+        // Remove active class from all MEP buttons
+        document.querySelectorAll('#mepLucentBtn, #mepOpaqueBtn, #mepOffBtn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        let script = '';
+        switch(mode) {
+            case 'lucent':
+                // Delete any existing surface first, then create MEP surface (translucent)
+                script = `
+                    isosurface delete;
+                    set isosurfacePropertySmoothing false;
+                    isosurface resolution 6 molecular map mep;
+                    color isosurface range -0.1 0.1;
+                    isosurface translucent 0.7;
+                `;
+                document.getElementById('mepLucentBtn').classList.add('active');
+                console.log('MEP Lucent surface applied');
+                break;
+                
+            case 'opaque':
+                // Delete any existing surface first, then create MEP surface (opaque)
+                script = `
+                    isosurface delete;
+                    set isosurfacePropertySmoothing false;
+                    isosurface resolution 6 molecular map mep;
+                    color isosurface range -0.1 0.1;
+                `;
+                document.getElementById('mepOpaqueBtn').classList.add('active');
+                console.log('MEP Opaque surface applied');
+                break;
+                
+            case 'off':
+                // Remove all isosurfaces
+                script = 'isosurface delete;';
+                document.getElementById('mepOffBtn').classList.add('active');
+                console.log('MEP surface hidden');
+                break;
+        }
+        
+        console.log('Executing MEP script:', script.trim());
+        Jmol.script(window.currentJsmolApplet, script);
+        
+    } catch (error) {
+        console.error('Error in setJSmolMEP:', error);
+        alert('Error displaying MEP surface. This feature requires a molecule with calculated electrostatic potential data.');
+    }
+};
+
+// Dipole Functions
+window.toggleJSmolBondDipoles = function() {
+    console.log('toggleJSmolBondDipoles called');
+    
+    if (!window.currentJsmolApplet || typeof Jmol === 'undefined') {
+        console.warn('JSmol not ready - applet:', !!window.currentJsmolApplet, 'Jmol:', typeof Jmol !== 'undefined');
+        return;
+    }
+
+    try {
+        const bondDipolesBtn = document.getElementById('bondDipolesBtn');
+        const isActive = bondDipolesBtn.classList.contains('active');
+        
+        if (isActive) {
+            // Hide bond dipoles
+            const script = 'dipole delete; vectors off;';
+            Jmol.script(window.currentJsmolApplet, script);
+            bondDipolesBtn.classList.remove('active');
+            bondDipolesBtn.textContent = 'Bond Dipoles';
+            console.log('Bond dipoles hidden');
+        } else {
+            // Show bond dipoles
+            const script = `
+                calculate partialCharge;
+                dipole bonds on;
+                vector scale 2.0;
+                vector diameter 0.05;
+                color vectors yellow;
+            `;
+            Jmol.script(window.currentJsmolApplet, script);
+            bondDipolesBtn.classList.add('active');
+            bondDipolesBtn.textContent = 'Bond Dipoles ✓';
+            console.log('Bond dipoles displayed');
+        }
+    } catch (error) {
+        console.error('Error in toggleJSmolBondDipoles:', error);
+        alert('Error displaying bond dipoles. This feature may require charge calculations.');
+    }
+};
+
+window.toggleJSmolOverallDipole = function() {
+    console.log('toggleJSmolOverallDipole called');
+    
+    if (!window.currentJsmolApplet || typeof Jmol === 'undefined') {
+        console.warn('JSmol not ready - applet:', !!window.currentJsmolApplet, 'Jmol:', typeof Jmol !== 'undefined');
+        return;
+    }
+
+    try {
+        const overallDipoleBtn = document.getElementById('overallDipoleBtn');
+        const isActive = overallDipoleBtn.classList.contains('active');
+        
+        if (isActive) {
+            // Hide overall dipole
+            const script = 'dipole molecular delete;';
+            Jmol.script(window.currentJsmolApplet, script);
+            overallDipoleBtn.classList.remove('active');
+            overallDipoleBtn.textContent = 'Overall Dipole';
+            console.log('Overall dipole hidden');
+        } else {
+            // Show overall dipole
+            const script = `
+                calculate partialCharge;
+                dipole molecular on;
+                vector scale 3.0;
+                vector diameter 0.1;
+                color vectors red;
+            `;
+            Jmol.script(window.currentJsmolApplet, script);
+            overallDipoleBtn.classList.add('active');
+            overallDipoleBtn.textContent = 'Overall Dipole ✓';
+            console.log('Overall dipole displayed');
+        }
+    } catch (error) {
+        console.error('Error in toggleJSmolOverallDipole:', error);
+        alert('Error displaying overall dipole. This feature may require charge calculations.');
+    }
+};
+
+window.minimizeJSmolEnergy = function() {
+    console.log('minimizeJSmolEnergy called');
+    
+    if (!window.currentJsmolApplet || typeof Jmol === 'undefined') {
+        console.warn('JSmol not ready - applet:', !!window.currentJsmolApplet, 'Jmol:', typeof Jmol !== 'undefined');
+        return;
+    }
+
+    try {
+        const minimizeBtn = document.getElementById('minimizeBtn');
+        
+        // Check if already running
+        if (minimizeBtn.disabled) {
+            console.log('Energy minimization already in progress');
+            return;
+        }
+        
+        // Disable button during calculation
+        minimizeBtn.disabled = true;
+        minimizeBtn.textContent = 'Minimizing...';
+        
+        // Get initial energy for comparison
+        const initialEnergyScript = 'print {*}.energy';
+        
+        // Energy minimization script with more detailed feedback
+        const script = `
+            print "Starting energy minimization...";
+            minimize steps 100 criterion 0.001;
+            print "Energy minimization step completed";
+            print "Final energy: " + {*}.energy;
+        `;
+        
+        console.log('Starting energy minimization...');
+        Jmol.script(window.currentJsmolApplet, script);
+        
+        // Re-enable button after a shorter delay and provide feedback
+        setTimeout(() => {
+            minimizeBtn.disabled = false;
+            minimizeBtn.textContent = 'Energy Minimization';
+            
+            // Check if minimization had an effect
+            const energyCheck = Jmol.evaluateVar(window.currentJsmolApplet, '{*}.energy');
+            console.log('Energy minimization completed. Current energy:', energyCheck);
+            
+            // Visual feedback that it completed
+            minimizeBtn.style.backgroundColor = '#4CAF50';
+            minimizeBtn.textContent = 'Minimized ✓';
+            
+            setTimeout(() => {
+                minimizeBtn.style.backgroundColor = '';
+                minimizeBtn.textContent = 'Energy Minimization';
+            }, 2000);
+            
+        }, 2000); // Reduced from 3000 to 2000ms
+        
+    } catch (error) {
+        console.error('Error in minimizeJSmolEnergy:', error);
+        const minimizeBtn = document.getElementById('minimizeBtn');
+        minimizeBtn.disabled = false;
+        minimizeBtn.textContent = 'Energy Minimization';
+        minimizeBtn.style.backgroundColor = '';
+        alert('Error during energy minimization. This feature may not be available for all molecule types.');
+    }
+};
+
+// Helper function to calculate atom count from molecular formula
+function calculateAtomCountFromFormula(formula) {
+    if (!formula || formula === 'C?H?' || formula === 'Unknown') {
+        return '0';
+    }
+    
+    try {
+        // Remove any charges, dots, or special characters, keep only elements and numbers
+        const cleanFormula = formula.replace(/[+\-\.\s]/g, '');
+        
+        // Regex to match element symbol followed by optional number
+        const elementPattern = /([A-Z][a-z]?)(\d*)/g;
+        let totalAtoms = 0;
+        let match;
+        
+        while ((match = elementPattern.exec(cleanFormula)) !== null) {
+            const element = match[1];
+            const count = match[2] === '' ? 1 : parseInt(match[2]);
+            totalAtoms += count;
+        }
+        
+        return totalAtoms.toString();
+    } catch (error) {
+        console.warn('Error parsing formula:', formula, error);
+        return '0';
+    }
+}
+
+// Molecule Info Functions
+window.updateMoleculeInfo = function() {
+    if (!window.currentJsmolApplet || typeof Jmol === 'undefined') {
+        return;
+    }
+
+    try {
+        let name = 'Unknown Molecule';
+        let formula = 'C?H?';
+        let weight = 'N/A';
+        let atomCount = '0';
+        
+        // Prioritize data from API calls stored globally (PubChem/CIR)
+        if (window.currentMoleculeData) {
+            const data = window.currentMoleculeData;
+            name = data.name || 'Unknown Molecule';
+            formula = data.formula !== 'Unknown' ? data.formula : 'C?H?';
+            atomCount = data.atomCount !== 'N/A' ? data.atomCount : '0';
+            
+            if (data.weight && data.weight !== 'N/A' && !isNaN(parseFloat(data.weight))) {
+                weight = parseFloat(data.weight).toFixed(2) + ' Da';
+            }
+            
+            console.log('Using API data for molecule info:', data);
+        }
+        
+        // Fallback to JSmol data if API data is not complete
+        if (name === 'Unknown Molecule') {
+            const jsmolTitle = Jmol.evaluateVar(window.currentJsmolApplet, '{*}.title');
+            if (jsmolTitle && jsmolTitle !== 'null') {
+                name = String(jsmolTitle).replace(/"/g, '');
+            }
+        }
+        
+        if (formula === 'C?H?') {
+            const jsmolFormula = Jmol.evaluateVar(window.currentJsmolApplet, '{*}.formula');
+            if (jsmolFormula && jsmolFormula !== 'null') {
+                formula = String(jsmolFormula).replace(/"/g, '');
+            }
+        }
+        
+        if (atomCount === '0') {
+            // Try multiple approaches to get accurate atom count
+            try {
+                // Method 1: Try to get count directly from JSmol after ensuring hydrogens are added
+                Jmol.script(window.currentJsmolApplet, 'calculate hydrogens');
+                let jsmolAtomCount = Jmol.evaluateVar(window.currentJsmolApplet, '{all}.size');
+                
+                if (!jsmolAtomCount || jsmolAtomCount === 'null') {
+                    // Method 2: Try different JSmol selection syntax
+                    jsmolAtomCount = Jmol.evaluateVar(window.currentJsmolApplet, '{*}.count');
+                }
+                
+                if (!jsmolAtomCount || jsmolAtomCount === 'null') {
+                    // Method 3: Calculate from molecular formula if available
+                    if (formula && formula !== 'C?H?' && formula !== 'Unknown') {
+                        atomCount = calculateAtomCountFromFormula(formula);
+                    }
+                } else {
+                    atomCount = String(jsmolAtomCount).replace(/"/g, '');
+                }
+                
+            } catch (error) {
+                console.warn('Error counting atoms:', error);
+                // Final fallback: Calculate from formula or use basic count
+                if (formula && formula !== 'C?H?' && formula !== 'Unknown') {
+                    atomCount = calculateAtomCountFromFormula(formula);
+                } else {
+                    const jsmolAtomCount = Jmol.evaluateVar(window.currentJsmolApplet, '{*}.size');
+                    if (jsmolAtomCount && jsmolAtomCount !== 'null') {
+                        atomCount = String(jsmolAtomCount).replace(/"/g, '');
+                    }
+                }
+            }
+        }
+        
+        if (weight === 'N/A') {
+            const jsmolWeight = Jmol.evaluateVar(window.currentJsmolApplet, '{*}.mass');
+            if (jsmolWeight && jsmolWeight > 0) {
+                weight = parseFloat(jsmolWeight).toFixed(2) + ' Da';
+            }
+        }
+
+        // Update UI elements
+        document.getElementById('moleculeName').textContent = name;
+        document.getElementById('moleculeFormula').textContent = formula;
+        document.getElementById('atomCount').textContent = atomCount;
+        document.getElementById('molecularWeight').textContent = weight;
+
+        console.log('Molecule info updated:', { name, formula, atomCount, weight });
+    } catch (error) {
+        console.error('Error updating molecule info:', error);
+        // Set fallback values
+        document.getElementById('moleculeName').textContent = 'Unknown Molecule';
+                 document.getElementById('moleculeFormula').textContent = 'C?H?';
+         document.getElementById('atomCount').textContent = '0';
+         document.getElementById('molecularWeight').textContent = 'N/A';
+    }
+};
+
+// Update molecule info when molecule loads or changes
+window.refreshMoleculeData = function() {
+    setTimeout(() => {
+        updateMoleculeInfo();
+    }, 1000); // Delay to ensure molecule is fully loaded
+};
+
+// Clear stored molecule data (called when loading new molecules)
+window.clearMoleculeData = function() {
+    window.currentMoleculeData = null;
+    console.log('Molecule data cleared');
 };
 
 // Callback function for JSmol picking

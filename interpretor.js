@@ -529,7 +529,8 @@ export default class Interpretor {
         }
       }
 
-      const propUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/CanonicalSMILES,IUPACName/JSON`;
+      // Get comprehensive molecular data
+      const propUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/CanonicalSMILES,IUPACName,MolecularFormula,MolecularWeight,HeavyAtomCount/JSON`;
       const propResp = await fetch(propUrl);
       const propData = await propResp.json();
       const props = propData?.PropertyTable?.Properties?.[0];
@@ -539,7 +540,19 @@ export default class Interpretor {
         return null;
       }
 
+      // Store molecular data globally for the info panel
+      window.currentMoleculeData = {
+        name: props.IUPACName || input,
+        formula: props.MolecularFormula || 'Unknown',
+        weight: props.MolecularWeight || 'N/A',
+        atomCount: props.HeavyAtomCount || 'N/A',
+        smiles: props.CanonicalSMILES,
+        source: 'PubChem'
+      };
+
       this.outputCallback(`IUPAC Name: ${props.IUPACName}`);
+      this.outputCallback(`Molecular Formula: ${props.MolecularFormula}`);
+      this.outputCallback(`Molecular Weight: ${props.MolecularWeight} g/mol`);
       this.outputCallback(`PubChem returned SMILES: ${props.CanonicalSMILES}`);
       return props.CanonicalSMILES;
     } catch (error) {
@@ -583,6 +596,17 @@ export default class Interpretor {
       );
       if (response.ok) {
         const smiles = await response.text();
+        
+        // Store basic molecular data from CIR (limited info available)
+        window.currentMoleculeData = {
+          name: input,
+          formula: 'Unknown', // CIR doesn't provide formula directly
+          weight: 'N/A',
+          atomCount: 'N/A',
+          smiles: smiles,
+          source: 'CIR'
+        };
+        
         this.outputCallback("Found molecule in online chemical database.");
         this.outputCallback("CIR API returned SMILES: " + smiles);
         return smiles;
@@ -713,6 +737,13 @@ async renderWithJSmol(smiles) {
       
       Jmol.script(applet, script);
       this.outputCallback("Molecule loaded!");
+      
+      // Update molecule information panel
+      setTimeout(() => {
+        if (window.updateMoleculeInfo) {
+          window.updateMoleculeInfo();
+        }
+      }, 1000);
       
       // Set initial button states
       setTimeout(() => {
