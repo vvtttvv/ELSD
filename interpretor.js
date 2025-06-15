@@ -83,8 +83,31 @@ export default class Interpretor {
     if (!node) return;
 
     if (node.type === "KEYWORD_TOKEN" && node.value === "visualize") {
-      const message = this.visualize(this.evaluateArguments(node.left)[0]);
-      this.outputCallback(message);
+      const args = this.evaluateArguments(node.left);
+      const formula = args[0];
+      const options = args[1] || null;
+      
+      // Parse options if it's a string (for cases like visualize("C6H6", "jsmol"))
+      let parsedOptions = options;
+      if (typeof options === "string") {
+        if (options === "jsmol") {
+          parsedOptions = { mode: "jsmol" };
+        } else {
+          // Try to parse as JSON string
+          try {
+            parsedOptions = JSON.parse(options);
+          } catch (e) {
+            // Try to parse simple key:value syntax
+            parsedOptions = this.parseSimpleOptions(options);
+            if (!parsedOptions) {
+              this.outputCallback("Warning: Could not parse options. Using default settings.");
+              parsedOptions = null;
+            }
+          }
+        }
+      }
+      
+      this.visualize(formula, parsedOptions);
       return;
     }
 
@@ -417,50 +440,91 @@ export default class Interpretor {
     }, 0);
   }
 
-  visualize(input) {
-  if (!input || typeof input !== "string") {
-    this.outputCallback(
-      "visualize() expects a valid molecule string (e.g., 'C6H6')."
-    );
-    return;
+  visualize(input, options = null) {
+    if (!input || typeof input !== "string") {
+      this.outputCallback(
+        "visualize() expects a valid molecule string (e.g., 'C6H6')."
+      );
+      return;
+    }
+
+    // If options is provided and contains mode: "jsmol", force JSmol mode
+    if (options && options.mode === "jsmol") {
+      this.outputCallback("Visualizing formula: " + input);
+      this.outputCallback("Mode: JSmol (forced by options)");
+      
+      // Switch to JSmol mode if not already active
+      this.ensureJSmolMode().then(() => {
+        // Try multiple chemistry APIs to convert input to SMILES
+        this.tryMultipleAPIs(input).then((smiles) => {
+          if (smiles) {
+            this.outputCallback("Chemistry API returned SMILES: " + smiles);
+            this.outputCallback("Rendering with JSmol...");
+            this.renderWithJSmol(smiles, options);
+          } else {
+            this.outputCallback(
+              `Could not convert "${input}" to a valid molecular structure.`
+            );
+            this.outputCallback(
+              "Please try a different notation or a common chemical name."
+            );
+          }
+        });
+      });
+      return;
+    }
+
+    // Default behavior (unchanged)
+    this.outputCallback("Visualizing formula: " + input);
+
+    // Try multiple chemistry APIs to convert input to SMILES
+    this.tryMultipleAPIs(input).then((smiles) => {
+      if (smiles) {
+        this.outputCallback("Chemistry API returned SMILES: " + smiles);
+
+        // Check current visualization mode
+        const currentMode = window.getVisualizationMode ? window.getVisualizationMode() : 'kekule';
+        
+        this.outputCallback(`Current visualization mode: ${currentMode}`);
+        
+        if (currentMode === 'jsmol') {
+          this.outputCallback("Rendering with JSmol...");
+          this.renderWithJSmol(smiles, options);
+        } else {
+          this.outputCallback("Rendering with Kekule.js...");
+          this.renderMolecule(smiles);
+          // Update status indicators
+          if (window.updateVisualizationStatus) {
+            window.updateVisualizationStatus('2d', true);
+            window.updateVisualizationStatus('3d', true);
+          }
+        }
+
+      } else {
+        this.outputCallback(
+          `Could not convert "${input}" to a valid molecular structure.`
+        );
+        this.outputCallback(
+          "Please try a different notation or a common chemical name."
+        );
+      }
+    });
   }
 
-  this.outputCallback("Visualizing formula: " + input);
-
-  // Try multiple chemistry APIs to convert input to SMILES
-  this.tryMultipleAPIs(input).then((smiles) => {
-    if (smiles) {
-      this.outputCallback("Chemistry API returned SMILES: " + smiles);
-
-      // Check current visualization mode
-      const currentMode = window.getVisualizationMode ? window.getVisualizationMode() : 'kekule';
-      
-      this.outputCallback(`Current visualization mode: ${currentMode}`);
-      
-      if (currentMode === 'jsmol') {
-        this.outputCallback("Rendering with JSmol...");
-        this.renderWithJSmol(smiles);
-      } else {
-        this.outputCallback("Rendering with Kekule.js...");
-        this.renderMolecule(smiles);
-        // Update status indicators
-        if (window.updateVisualizationStatus) {
-          window.updateVisualizationStatus('2d', true);
-          window.updateVisualizationStatus('3d', true);
-        }
+  // Helper function to ensure JSmol mode is active
+  async ensureJSmolMode() {
+    const currentMode = window.getVisualizationMode ? window.getVisualizationMode() : 'kekule';
+    if (currentMode !== 'jsmol') {
+      this.outputCallback("Switching to JSmol mode...");
+      // Trigger the mode switch
+      const toggle = document.getElementById('visualizationToggle');
+      if (toggle) {
+        toggle.click();
+        // Wait a bit for the mode switch to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
-
-    } else {
-      this.outputCallback(
-        `Could not convert "${input}" to a valid molecular structure.`
-      );
-      this.outputCallback(
-        "Please try a different notation or a common chemical name."
-      );
     }
-  });
-}
-
+  }
 
   // Try multiple APIs in sequence
   async tryMultipleAPIs(input) {
@@ -700,7 +764,7 @@ export default class Interpretor {
   }
 }
 
-async renderWithJSmol(smiles) {
+async renderWithJSmol(smiles, options) {
   const jsmolContainer = document.getElementById("jsmolContainer");
   if (!jsmolContainer) {
     this.outputCallback("Error: JSmol container not found.");
@@ -733,44 +797,66 @@ async renderWithJSmol(smiles) {
       this.outputCallback("JSmol applet ready. Loading molecule...");
       console.log("MOL block for JSmol:", molBlock);
       
-      const script = `load DATA "model"\n${molBlock}\nEND "model"; background white; set antialiasDisplay true; set ambient 40; set diffuse 80; set specular 80; set specularPower 40; color atoms cpk; spacefill 20%; wireframe 0.15; zoom 120; rotate best;`;
+      // Build initial script based on options or defaults
+      const defaultOptions = {
+        style: "ballstick",
+        background: "white",
+        quality: "high",
+        dipoles: "hide",
+        mep: "off"
+      };
+      
+      const appliedOptions = options ? { ...defaultOptions, ...options } : defaultOptions;
+      
+      let script = `load DATA "model"\n${molBlock}\nEND "model"; `;
+      
+      // Apply background
+      script += `background ${appliedOptions.background}; `;
+      
+      // Apply quality settings
+      if (appliedOptions.quality === "high") {
+        script += `set antialiasDisplay true; set ambient 40; set diffuse 80; set specular 80; set specularPower 40; `;
+      } else {
+        script += `set antialiasDisplay false; set ambient 20; set diffuse 60; set specular 0; `;
+      }
+      
+      // Apply base style
+      script += `color atoms cpk; `;
+      
+      // Apply representation style
+      switch(appliedOptions.style) {
+        case "ballstick":
+          script += `spacefill 20%; wireframe 0.15; `;
+          break;
+        case "stick":
+          script += `spacefill off; wireframe 0.3; `;
+          break;
+        case "spacefill":
+          script += `spacefill 100%; wireframe off; `;
+          break;
+        case "wireframe":
+          script += `spacefill off; wireframe 0.05; `;
+          break;
+      }
+      
+      script += `zoom 120; rotate best;`;
       
       Jmol.script(applet, script);
       this.outputCallback("Molecule loaded!");
       
-      // Update molecule information panel
+      // Apply additional options after initial load
       setTimeout(() => {
+        this.applyJSmolOptions(applet, appliedOptions);
+        
+        // Update molecule information panel
         if (window.updateMoleculeInfo) {
           window.updateMoleculeInfo();
         }
       }, 1000);
       
-      // Set initial button states
+      // Set initial button states based on applied options
       setTimeout(() => {
-        // Set Ball & Stick as active (default representation)
-        const ballStickBtn = document.getElementById('ballStickBtn');
-        if (ballStickBtn) {
-          document.querySelectorAll('#ballStickBtn, #stickBtn, #spacefillBtn, #wireframeBtn').forEach(btn => {
-            btn.classList.remove('active');
-          });
-          ballStickBtn.classList.add('active');
-        }
-        
-        // Set White background as active (default background)
-        const whiteBgBtn = document.getElementById('whiteBgBtn');
-        if (whiteBgBtn) {
-          document.querySelectorAll('#whiteBgBtn, #blackBgBtn, #grayBgBtn').forEach(btn => {
-            btn.classList.remove('active');
-          });
-          whiteBgBtn.classList.add('active');
-        }
-        
-        // Set High Quality as active (default quality)
-        const qualityBtn = document.getElementById('qualityBtn');
-        if (qualityBtn) {
-          qualityBtn.classList.add('active');
-          qualityBtn.textContent = 'High Quality ✓';
-        }
+        this.updateButtonStates(appliedOptions);
       }, 500);
       
       if (window.updateVisualizationStatus) {
@@ -784,6 +870,188 @@ async renderWithJSmol(smiles) {
   jsmolContainer.innerHTML = Jmol.getAppletHtml(applet);
   window.currentJsmolApplet = applet;
 }
+
+  // Helper function to apply additional JSmol options after molecule is loaded
+  applyJSmolOptions(applet, options) {
+    try {
+      // Apply dipoles
+      if (options.dipoles === "show") {
+        if (options.dipoles.includes("bond") || options.dipoles === "show") {
+          Jmol.script(applet, `dipole bonds on; vectors on; vector scale 3.0; color vectors red;`);
+          this.outputCallback("Bond dipoles displayed");
+        }
+        if (options.dipoles.includes("overall") || options.dipoles === "show") {
+          Jmol.script(applet, `dipole molecular on; vector on; vector scale 5.0; color vector blue;`);
+          this.outputCallback("Overall dipole displayed");
+        }
+      }
+      
+      // Apply MEP surface
+      if (options.mep && options.mep !== "off") {
+        let mepScript;
+        if (options.mep === "lucent") {
+          mepScript = `isosurface delete; isosurface molecular map mep colorscheme "rwb" translucent 0.5;`;
+        } else {
+          mepScript = `isosurface delete; isosurface molecular map mep colorscheme "rwb";`;
+        }
+        Jmol.script(applet, mepScript);
+        this.outputCallback(`MEP surface rendered (${options.mep})`);
+      }
+      
+      // Apply measurement tools
+      if (options.tools && Array.isArray(options.tools)) {
+        options.tools.forEach(tool => {
+          switch(tool) {
+            case "distance":
+              Jmol.script(applet, 'set picking distance; set pickCallback "jmolPickCallback";');
+              this.outputCallback("Distance measurement tool enabled");
+              break;
+            case "angle":
+              Jmol.script(applet, 'set picking angle; set pickCallback "jmolPickCallback";');
+              this.outputCallback("Angle measurement tool enabled");
+              break;
+            case "torsion":
+              Jmol.script(applet, 'set picking torsion; set pickCallback "jmolPickCallback";');
+              this.outputCallback("Torsion measurement tool enabled");
+              break;
+          }
+        });
+      }
+      
+      // Apply export if requested
+      if (options.export === "save") {
+        setTimeout(() => {
+          this.exportJSmolImage(applet);
+        }, 2000);
+      }
+      
+    } catch (error) {
+      console.error("Error applying JSmol options:", error);
+      this.outputCallback("Warning: Some visualization options could not be applied.");
+    }
+  }
+
+  // Helper function to update button states based on applied options
+  updateButtonStates(options) {
+    try {
+      // Update style buttons
+      document.querySelectorAll('#ballStickBtn, #stickBtn, #spacefillBtn, #wireframeBtn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      const styleMapping = {
+        "ballstick": "ballStickBtn",
+        "stick": "stickBtn", 
+        "spacefill": "spacefillBtn",
+        "wireframe": "wireframeBtn"
+      };
+      
+      const styleBtn = document.getElementById(styleMapping[options.style]);
+      if (styleBtn) styleBtn.classList.add('active');
+      
+      // Update background buttons
+      document.querySelectorAll('#whiteBgBtn, #blackBgBtn, #grayBgBtn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      const bgBtn = document.getElementById(options.background + 'BgBtn');
+      if (bgBtn) bgBtn.classList.add('active');
+      
+      // Update quality button
+      const qualityBtn = document.getElementById('qualityBtn');
+      if (qualityBtn) {
+        if (options.quality === "high") {
+          qualityBtn.classList.add('active');
+          qualityBtn.textContent = 'High Quality ✓';
+        } else {
+          qualityBtn.classList.remove('active');
+          qualityBtn.textContent = 'High Quality';
+        }
+      }
+      
+      // Update measurement tool buttons
+      if (options.tools && Array.isArray(options.tools)) {
+        const distanceBtn = document.getElementById('distanceBtn');
+        const angleBtn = document.getElementById('angleBtn');
+        const torsionBtn = document.getElementById('torsionBtn');
+        
+        if (options.tools.includes('distance') && distanceBtn) {
+          distanceBtn.classList.add('active');
+          distanceBtn.textContent = 'Distance ✓';
+        }
+        if (options.tools.includes('angle') && angleBtn) {
+          angleBtn.classList.add('active');
+          angleBtn.textContent = 'Angle ✓';
+        }
+        if (options.tools.includes('torsion') && torsionBtn) {
+          torsionBtn.classList.add('active');
+          torsionBtn.textContent = 'Torsion ✓';
+        }
+      }
+      
+      // Update dipole buttons
+      if (options.dipoles === "show") {
+        const bondDipoleBtn = document.getElementById('bondDipolesBtn');
+        const overallDipoleBtn = document.getElementById('overallDipoleBtn');
+        if (bondDipoleBtn) bondDipoleBtn.classList.add('active');
+        if (overallDipoleBtn) overallDipoleBtn.classList.add('active');
+      }
+
+      // Update MEP buttons
+      if (options.mep && options.mep !== "off") {
+        document.querySelectorAll('#mepLucentBtn, #mepOpaqueBtn, #mepOffBtn').forEach(btn => {
+          btn.classList.remove('active');
+        });
+        
+        const mepBtnId = options.mep === "lucent" ? "mepLucentBtn" : 
+                        options.mep === "opaque" ? "mepOpaqueBtn" : "mepOffBtn";
+        const mepBtn = document.getElementById(mepBtnId);
+        if (mepBtn) mepBtn.classList.add('active');
+      }
+      
+    } catch (error) {
+      console.error("Error updating button states:", error);
+    }
+  }
+
+  // Helper function to export JSmol image
+  exportJSmolImage(applet) {
+    try {
+      if (typeof Jmol !== 'undefined' && applet) {
+        Jmol.script(applet, 'write IMAGE PNG "molecule.png"');
+        this.outputCallback("Image export initiated");
+      }
+    } catch (error) {
+      console.error("Error exporting image:", error);
+      this.outputCallback("Error: Could not export image");
+    }
+  }
+
+  // Helper function to parse simple option strings
+  parseSimpleOptions(optionsStr) {
+    try {
+      // Handle simple comma-separated key:value pairs
+      // e.g., "mode:jsmol, style:ballstick, background:black"
+      const options = {};
+      const pairs = optionsStr.split(',');
+      
+      for (const pair of pairs) {
+        const [key, value] = pair.split(':').map(s => s.trim());
+        if (key && value) {
+          // Handle array values like "tools:distance,angle"
+          if (key === 'tools') {
+            options[key] = value.split(',').map(s => s.trim());
+          } else {
+            options[key] = value;
+          }
+        }
+      }
+      
+      return Object.keys(options).length > 0 ? options : null;
+    } catch (error) {
+      return null;
+    }
+  }
 
 
 
