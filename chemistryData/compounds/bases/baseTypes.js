@@ -81,6 +81,11 @@ export function isBase(formula) {
 
 //Extracts the metal element from a base formula
 export function extractMetal(formula) {
+  // Special case for ammonium hydroxide
+  if (formula === "NH4OH") {
+    return "NH4";
+  }
+  
   const match = formula.match(/^([A-Z][a-z]?)(?:\d+)?\(?/);
   if (match) {
     return match[1];
@@ -90,6 +95,11 @@ export function extractMetal(formula) {
 
 //Determines the number of hydroxide groups in a base
 export function getHydroxideCount(formula) {
+  // Special case for ammonium hydroxide
+  if (formula === "NH4OH") {
+    return 1;
+  }
+  
   // Simple hydroxides like NaOH
   if (formula.match(/^[A-Z][a-z]?OH$/)) {
     return 1;
@@ -158,6 +168,9 @@ export function classifyBaseBySolubility(formula) {
 
 //Determines if a base is amphoteric
 export function isAmphotericBase(formula) {
+  // First check if it's actually a base (contains OH)
+  if (!isBase(formula)) return false;
+  
   // Check if it's a known amphoteric base
   if (knownBases[formula] && knownBases[formula][0] === baseCategories.AMPHOTERIC) {
     return true;

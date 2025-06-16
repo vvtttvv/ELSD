@@ -1,9 +1,10 @@
 import { baseCategories, classifyBaseByStrength, classifyBaseBySolubility, isAmphotericBase, extractMetal, getHydroxideCount } from './baseTypes.js';
-import { oxideCategories, classifyOxide } from '../oxides/oxideTypes.js';
-import { extractIons } from '../../core/extractIons.js';
+import { classifyOxide, oxideCategories, getCorrespondingAcid, extractMainElement } from '../oxides/oxideTypes.js';
+import { extractIons, extractIonsWithOxidationState } from '../../core/extractIons.js';
 import { elementValences } from '../../core/valences.js';
 import { solubilityTable } from '../../core/solubilityTable.js';
-import { balanceSaltFormula } from '../../core/valences.js';
+import { balanceSaltFormula, balanceSaltFormulaOrganic, balanceSaltFormulaWithOxidationState } from '../../core/valences.js';
+import { extractAcidRadical } from '../acids/acidTypes.js';
 
 
 /**
@@ -21,7 +22,7 @@ export const baseReactions = {
         if (!metal || !anion) return null;
         
         const hydroxideCount = getHydroxideCount(base);
-        const salt = balanceSaltFormula(metal, anion);
+        const salt = balanceSaltFormulaOrganic(metal, anion);
         return [salt, "H2O"];
       },
       reactionType: "neutralization",
@@ -32,20 +33,21 @@ export const baseReactions = {
     [oxideCategories.ACIDIC]: {
       possible: true,
       products: (base, acidicOxide) => {
+        // Get the corresponding acid for this oxide
+        const correspondingAcid = getCorrespondingAcid(acidicOxide);
+        if (!correspondingAcid) return null;
+        
+        // Extract the acid radical (anion) from the corresponding acid
+        const anion = extractAcidRadical(correspondingAcid);
+        
+        // Extract the metal from the base
         const metal = extractMetal(base);
-        const nonMetal = extractMetal(acidicOxide); // Gets main element from oxide
-        if (!metal || !nonMetal) return null;
+        if (!anion || !metal) return null;
         
-        const hydroxideCount = getHydroxideCount(base);
+        // Build the salt using proper valence balancing
+        const salt = balanceSaltFormula(metal, anion, base);
         
-        // Generate salt formula - this is simplified and would need refinement
-        if (hydroxideCount === 1) {
-          return [`${metal}2${nonMetal}O3`, "H2O"];
-        } else if (hydroxideCount === 2) {
-          return [`${metal}${nonMetal}O3`, "H2O"];
-        } else {
-          return [`${metal}2(${nonMetal}O4)3`, "H2O"];
-        }
+        return [salt, "H2O"];
       },
       reactionType: "neutralization",
       conditions: ["room temperature", "aqueous"]
@@ -56,14 +58,18 @@ export const baseReactions = {
       possible: true,
       products: (base, amphoOxide) => {
         const metal = extractMetal(base);
-        const amphoMetal = extractMetal(amphoOxide);
+        const amphoMetal = extractMainElement(amphoOxide);  // Use extractMainElement for oxides
         if (!metal || !amphoMetal) return null;
         
-        // Form complex salt like Na2ZnO2 from ZnO + 2NaOH
-        const hydroxideCount = getHydroxideCount(base);
-        if (hydroxideCount === 1) {
+        // Stoichiometry depends on the amphoteric metal, not the base:
+        // Al2O3 + 2NaOH → 2NaAlO2 + H2O (Al forms 1:1 with alkali metal)
+        // ZnO + 2NaOH → Na2ZnO2 + H2O (Zn forms 2:1 with alkali metal)
+        if (amphoMetal === "Al") {
+          return [`${metal}${amphoMetal}O2`, "H2O"];
+        } else if (amphoMetal === "Zn") {
           return [`${metal}2${amphoMetal}O2`, "H2O"];
         } else {
+          // For other amphoteric metals, use 1:1 ratio as default
           return [`${metal}${amphoMetal}O2`, "H2O"];
         }
       },
@@ -72,7 +78,7 @@ export const baseReactions = {
     },
     
     // Strong Base + Amphoteric Hydroxide -> Complex Salt + Water
-    [baseCategories.AMPHOTERIC]: {
+    "amphoteric_hydroxide": {
       possible: true,
       products: (strongBase, amphoBase) => {
         const metal = extractMetal(strongBase);
@@ -102,14 +108,22 @@ export const baseReactions = {
         return transitionMetals.includes(cation);
       },
       products: (base, salt) => {
-        const { cation, anion } = extractIons(salt);
+        const ionInfo = extractIonsWithOxidationState(salt);
+        const { cation, anion, cationOxidationState } = ionInfo;
         const baseMetalIon = extractMetal(base);
         if (!cation || !anion || !baseMetalIon) return null;
 
         const newSalt = balanceSaltFormula(baseMetalIon, anion);
-        const precipitate = balanceSaltFormula(cation, "OH");
+        
+        // Use oxidation state to form the correct hydroxide
+        let precipitate;
+        if (cationOxidationState) {
+          precipitate = balanceSaltFormulaWithOxidationState(cation, "OH", cationOxidationState);
+        } else {
+          precipitate = balanceSaltFormula(cation, "OH");
+        }
 
-        return [newSalt, precipitate];
+        return [precipitate, newSalt];
       },
 
       reactionType: "precipitation",
@@ -146,7 +160,7 @@ export const baseReactions = {
         if (!metal || !anion) return null;
         
         const hydroxideCount = getHydroxideCount(base);
-        const salt = balanceSaltFormula(metal, anion);
+        const salt = balanceSaltFormulaOrganic(metal, anion);
         
         return [salt, "H2O"];
       },
@@ -158,21 +172,21 @@ export const baseReactions = {
     [oxideCategories.ACIDIC]: {
       possible: true,
       products: (base, acidicOxide) => {
-        // Similar to strong base but reaction may be incomplete
+        // Get the corresponding acid for this oxide
+        const correspondingAcid = getCorrespondingAcid(acidicOxide);
+        if (!correspondingAcid) return null;
+        
+        // Extract the acid radical (anion) from the corresponding acid
+        const anion = extractAcidRadical(correspondingAcid);
+        
+        // Extract the metal from the base
         const metal = extractMetal(base);
-        const nonMetal = extractMetal(acidicOxide);
-        if (!metal || !nonMetal) return null;
+        if (!anion || !metal) return null;
         
-        const hydroxideCount = getHydroxideCount(base);
+        // Build the salt using proper valence balancing
+        const salt = balanceSaltFormula(metal, anion, base);
         
-        // Generate salt formula with similar patterns as strong base
-        if (hydroxideCount === 1) {
-          return [`${metal}2${nonMetal}O3`, "H2O"];
-        } else if (hydroxideCount === 2) {
-          return [`${metal}${nonMetal}O3`, "H2O"];
-        } else {
-          return [`${metal}2(${nonMetal}O4)3`, "H2O"];
-        }
+        return [salt, "H2O"];
       },
       reactionType: "neutralization",
       conditions: ["room temperature", "aqueous"]
@@ -215,7 +229,7 @@ export const baseReactions = {
         if (!metal || !anion) return null;
         
         const hydroxideCount = getHydroxideCount(base);
-        const salt = balanceSaltFormula(metal, anion);
+        const salt = balanceSaltFormulaOrganic(metal, anion);
         
         return [salt, "H2O"];
       },
@@ -233,13 +247,26 @@ export const baseReactions = {
         
         // Examples:
         // Al(OH)3 + NaOH → NaAlO2 + 2H2O
-        // With excess base: Al(OH)3 + NaOH → Na[Al(OH)4]
+        // ZnO + 2NaOH → Na2ZnO2 + H2O (but for simple cases, usually NaAlO2)
         
-        // Regular case - forms aluminate/zincate
-        return [`${alkaliMetal}${amphoMetal}O2`, "H2O"];
+        // For most common cases, forms simple aluminates/zincates
+        // Al(OH)3 + NaOH → NaAlO2 + 2H2O
+        // Zn(OH)2 + 2NaOH → Na2ZnO2 + 2H2O  
+        
+        const amphoOxidationState = getHydroxideCount(amphoBase) || 3; // Default to 3 for Al
+        
+        // Simple stoichiometry: 1 alkali metal per 1 amphoteric metal for Al, 2 for Zn
+        if (amphoMetal === "Al") {
+          return [`${alkaliMetal}${amphoMetal}O2`, "H2O"];
+        } else if (amphoMetal === "Zn") {
+          return [`${alkaliMetal}2${amphoMetal}O2`, "H2O"];
+        } else {
+          // General case
+          return [`${alkaliMetal}${amphoMetal}O2`, "H2O"];
+        }
       },
       reactionType: "complex_formation",
-      conditions: ["room temperature", "aqueous"]
+      conditions: ["room temperature", "aqueous", "excess base"]
     },
     
     // Amphoteric bases typically decompose when heated
@@ -277,7 +304,8 @@ export function canReact(base, reactant) {
   if (!baseStrength) return false;
   
   // Check if reactant is an acid
-  if (reactant.startsWith('H') && !reactant.startsWith('H2O')) {
+  if ((reactant.startsWith('H') && !reactant.startsWith('H2O')) || 
+      reactant.includes('COOH')) {  // Include organic acids
     return baseReactions[baseStrength]["acid"].possible;
   }
   
@@ -291,25 +319,27 @@ export function canReact(base, reactant) {
   // Check if reactant is another base (for amphoteric reactions)
   if (reactant.includes('OH')) {
     const reactantStrength = classifyBaseByStrength(reactant);
+    const isReactantAmphoteric = isAmphotericBase(reactant);
+    const isBaseAmphoteric = isAmphotericBase(base);
     
-    // Amphoteric base can react with strong base
-    if (baseStrength === baseCategories.AMPHOTERIC && 
-        reactantStrength === baseCategories.STRONG) {
-      return baseReactions[baseCategories.AMPHOTERIC][baseCategories.STRONG].possible;
+    // Strong base + amphoteric hydroxide
+    if (isReactantAmphoteric && baseStrength === baseCategories.STRONG) {
+      return baseReactions[baseStrength]["amphoteric_hydroxide"].possible;
     }
     
-    // Strong base can react with amphoteric base
-    if (baseStrength === baseCategories.STRONG && 
-        reactantStrength === baseCategories.AMPHOTERIC) {
-      return baseReactions[baseCategories.STRONG][baseCategories.AMPHOTERIC].possible;
+    // Amphoteric base + strong base - explicit check
+    if (isBaseAmphoteric && reactantStrength === baseCategories.STRONG) {
+      // Direct check for amphoteric base + strong base reactions
+      return true; // These reactions are always possible
     }
     
     return false;
   }
   
-  // Check for salt (simple detection - not comprehensive)
+  // Check for salt (improved detection)
+  // A salt typically has a metal cation + anion, doesn't start with H, and doesn't contain OH
   if (!reactant.startsWith('H') && !reactant.includes('OH') && 
-      !["O", "N", "Cl", "Br", "I", "F", "S", "P", "C"].includes(reactant)) {
+      reactant.match(/[A-Z][a-z]?.*[A-Z]/) && !reactant.includes("O2")) {  // Exclude oxides
     return baseReactions[baseStrength]["salt"]?.possible?.(base, reactant) || false;
   }
   
@@ -337,7 +367,8 @@ export function predictProducts(base, reactant) {
   const baseStrength = classifyBaseByStrength(base);
   
   // Check if reactant is an acid
-  if (reactant.startsWith('H') && !reactant.startsWith('H2O')) {
+  if ((reactant.startsWith('H') && !reactant.startsWith('H2O')) || 
+      reactant.includes('COOH')) {  // Include organic acids
     return baseReactions[baseStrength]["acid"].products(base, reactant);
   }
   
@@ -350,17 +381,32 @@ export function predictProducts(base, reactant) {
   // Check if reactant is another base (for amphoteric reactions)
   if (reactant.includes('OH')) {
     const reactantStrength = classifyBaseByStrength(reactant);
+    const isReactantAmphoteric = isAmphotericBase(reactant);
+    const isBaseAmphoteric = isAmphotericBase(base);
     
-    // Amphoteric base can react with strong base
-    if (baseStrength === baseCategories.AMPHOTERIC && 
-        reactantStrength === baseCategories.STRONG) {
-      return baseReactions[baseCategories.AMPHOTERIC][baseCategories.STRONG].products(base, reactant);
+    // Strong base + amphoteric hydroxide
+    if (isReactantAmphoteric && baseStrength === baseCategories.STRONG) {
+      return baseReactions[baseStrength]["amphoteric_hydroxide"].products(base, reactant);
     }
     
-    // Strong base can react with amphoteric base
-    if (baseStrength === baseCategories.STRONG && 
-        reactantStrength === baseCategories.AMPHOTERIC) {
-      return baseReactions[baseCategories.STRONG][baseCategories.AMPHOTERIC].products(base, reactant);
+    // Amphoteric base + strong base - explicit implementation
+    if (isBaseAmphoteric && reactantStrength === baseCategories.STRONG) {
+      const amphoMetal = extractMetal(base);
+      const alkaliMetal = extractMetal(reactant);
+      if (!amphoMetal || !alkaliMetal) return null;
+      
+      // Al(OH)3 + NaOH → NaAlO2 + H2O
+      // Zn(OH)2 + 2NaOH → Na2ZnO2 + H2O
+      if (amphoMetal === "Al") {
+        return [`${alkaliMetal}${amphoMetal}O2`, "H2O"];
+      } else if (amphoMetal === "Zn") {
+        return [`${alkaliMetal}2${amphoMetal}O2`, "H2O"];
+      } else if (amphoMetal === "Be") {
+        return [`${alkaliMetal}2${amphoMetal}O2`, "H2O"];
+      } else {
+        // General case - use 1:1 ratio
+        return [`${alkaliMetal}${amphoMetal}O2`, "H2O"];
+      }
     }
     
     return null;
@@ -368,7 +414,7 @@ export function predictProducts(base, reactant) {
   
   // Check for salt
   if (!reactant.startsWith('H') && !reactant.includes('OH') && 
-      !["O", "N", "Cl", "Br", "I", "F", "S", "P", "C"].includes(reactant)) {
+      reactant.match(/[A-Z][a-z]?.*[A-Z]/) && !reactant.includes("O2")) {  // Exclude oxides
     if (baseReactions[baseStrength]["salt"] && 
         baseReactions[baseStrength]["salt"].possible(base, reactant)) {
       return baseReactions[baseStrength]["salt"].products(base, reactant);
@@ -407,37 +453,67 @@ export function getReactionInfo(base, reactant) {
   let reactionDetails;
   
   // Check if reactant is an acid
-  if (reactant.startsWith('H') && !reactant.startsWith('H2O')) {
+  if ((reactant.startsWith('H') && !reactant.startsWith('H2O')) || 
+      reactant.includes('COOH')) {  // Include organic acids
     reactantType = "acid";
     reactionDetails = baseReactions[baseStrength]["acid"];
   }
   
-  // Check if reactant is an oxide
-  const oxideType = classifyOxide(reactant);
-  if (oxideType) {
-    reactantType = `${oxideType} oxide`;
-    reactionDetails = baseReactions[baseStrength][oxideType];
-  }
-  
-  // Check if reactant is another base
-  if (reactant.includes('OH')) {
+  // Check if reactant is another base FIRST (before checking oxides)
+  if (!reactantType && reactant.includes('OH')) {
     const reactantStrength = classifyBaseByStrength(reactant);
-    const isAmphoteric = isAmphotericBase(reactant);
+    const isReactantAmphoteric = isAmphotericBase(reactant);
+    const isBaseAmphoteric = isAmphotericBase(base);
     
-    if (isAmphoteric && baseStrength === baseCategories.STRONG) {
+    // Strong base + amphoteric hydroxide
+    if (isReactantAmphoteric && baseStrength === baseCategories.STRONG) {
       reactantType = "amphoteric hydroxide";
-      reactionDetails = baseReactions[baseStrength][baseCategories.AMPHOTERIC];
-    } else if (baseStrength === baseCategories.AMPHOTERIC && reactantStrength === baseCategories.STRONG) {
+      reactionDetails = baseReactions[baseStrength]["amphoteric_hydroxide"];
+    } 
+    // Amphoteric base + strong base - explicit implementation
+    else if (isBaseAmphoteric && reactantStrength === baseCategories.STRONG) {
       reactantType = "strong base";
-      reactionDetails = baseReactions[baseCategories.AMPHOTERIC][baseCategories.STRONG];
-    } else {
+      // Create explicit reaction details
+      const amphoMetal = extractMetal(base);
+      const alkaliMetal = extractMetal(reactant);
+      if (!amphoMetal || !alkaliMetal) return null;
+      
+      let products;
+      if (amphoMetal === "Al") {
+        products = [`${alkaliMetal}${amphoMetal}O2`, "H2O"];
+      } else if (amphoMetal === "Zn") {
+        products = [`${alkaliMetal}2${amphoMetal}O2`, "H2O"];
+      } else if (amphoMetal === "Be") {
+        products = [`${alkaliMetal}2${amphoMetal}O2`, "H2O"];
+      } else {
+        products = [`${alkaliMetal}${amphoMetal}O2`, "H2O"];
+      }
+      
+      return {
+        baseType: baseStrength,
+        reactantType,
+        reactionType: "complex_formation",
+        products: products,
+        conditions: ["room temperature", "aqueous", "excess base"]
+      };
+    } 
+    else {
       return null; // No reaction between other base combinations
     }
   }
   
-  // Check for salt
+  // Check if reactant is an oxide (check before salts for true oxides)
+  if (!reactantType) {
+    const oxideType = classifyOxide(reactant);
+    if (oxideType && reactant.includes("O") && !reactant.includes("OH")) {  // Only true oxides (not hydroxides)
+      reactantType = `${oxideType} oxide`;
+      reactionDetails = baseReactions[baseStrength][oxideType];
+    }
+  }
+  
+  // Check for salt (only if not an oxide)
   if (!reactant.startsWith('H') && !reactant.includes('OH') && 
-      !reactantType && !["O", "N", "Cl", "Br", "I", "F", "S", "P", "C"].includes(reactant)) {
+      !reactantType && reactant.match(/[A-Z][a-z]?.*[A-Z]/) && !reactant.includes("O2")) {  // Exclude oxides
     reactantType = "salt";
     reactionDetails = baseReactions[baseStrength]["salt"];
   }

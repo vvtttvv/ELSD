@@ -382,6 +382,15 @@ export default class Interpretor {
       } else {
         message += ".<br>";
         
+        // Add reaction type if available
+        if (analysis.reactionType) {
+          const formattedType = analysis.reactionType
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+          message += `<br>⚗️ Reaction type: ${formattedType}`;
+        }
+        
         // Add reaction conditions if available
         if (analysis.conditions && analysis.conditions.length > 0) {
           message += `<br>✓ Conditions: ${analysis.conditions.join(", ")}`;
@@ -392,6 +401,24 @@ export default class Interpretor {
           message += "<br><br>🧪 Reactant information:";
           for (const [formula, type] of Object.entries(analysis.reactantTypes)) {
             message += `<br>  • ${formula}: ${type}`;
+          }
+        }
+        
+        // Add predicted products information
+        if (analysis.predictedProducts && analysis.predictedProducts.length > 0) {
+          message += "<br><br>🔬 Predicted products: " + analysis.predictedProducts.join(" + ");
+          
+          // Show comparison with given products
+          if (analysis.givenProducts && analysis.givenProducts.length > 0) {
+            message += "<br>📝 Given products: " + analysis.givenProducts.join(" + ");
+            
+            if (analysis.productsMatch !== undefined) {
+              if (analysis.productsMatch) {
+                message += "<br>✅ The predicted products match the given products.";
+              } else {
+                message += "<br>❌ The predicted products differ from the given products.";
+              }
+            }
           }
         }
       }

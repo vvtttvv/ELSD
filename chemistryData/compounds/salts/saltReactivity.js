@@ -1,9 +1,10 @@
 import { saltCategories, classifySaltByType, isSoluble, determineSaltpH, extractSaltComponents, isSalt } from './saltTypes.js';
 import { oxideCategories, classifyOxide } from '../oxides/oxideTypes.js';
-import { baseCategories, classifyBaseByStrength } from '../bases/baseTypes.js';
+import { baseCategories, classifyBaseByStrength, extractMetal, getHydroxideCount } from '../bases/baseTypes.js';
 import { acidCategories, classifyAcidByStrength } from '../acids/acidTypes.js';
 import { isMetal, isNonMetal } from '../../core/elements.js';
-import { extractIons } from '../../core/extractIons.js';
+import { extractIons, extractIonsWithOxidationState } from '../../core/extractIons.js';
+import { balanceSaltFormula, balanceSaltFormulaWithOxidationState } from '../../core/valences.js';
 import { solubilityTable } from '../../core/solubilityTable.js';
 
 /**
@@ -98,44 +99,54 @@ export const saltReactions = {
     "base": {
       possible: (salt, base) => {
         const { cation } = extractSaltComponents(salt);
-        const { cation: baseCation } = extractIons(base);
+        const baseMetal = extractMetal(base);
         
-        if (!cation || !baseCation) return false;
+        if (!cation || !baseMetal) return false;
+        
+        // Special case: Ammonium salts with strong bases produce NH3 gas
+        if (cation === "NH4") return true;
         
         // Check if reaction would form an insoluble hydroxide
-        const insolubleHydroxides = ["Fe", "Cu", "Zn", "Pb", "Mg", "Ca", "Al"];
+        const insolubleHydroxides = ["Fe", "Cu", "Zn", "Pb", "Mg", "Ca", "Al", "Cr", "Ni", "Co", "Mn", "Cd", "Hg"];
         return insolubleHydroxides.includes(cation);
       },
       products: (salt, base) => {
-        const { cation, anion } = extractSaltComponents(salt);
-        const { cation: baseCation } = extractIons(base);
+        const saltIons = extractIonsWithOxidationState(salt);
+        const baseMetal = extractMetal(base);
+        const baseHydroxideCount = getHydroxideCount(base);
         
-        if (!cation || !anion || !baseCation) return null;
+        if (!saltIons.cation || !saltIons.anion || !baseMetal) return null;
         
-        // Form new salt and hydroxide
-        let newSalt, hydroxide;
+        const { cation, anion, cationOxidationState } = saltIons;
         
-        if (cation === "Fe") {
-          if (salt.includes("Fe3+") || salt.includes("Fe(III)")) {
-            hydroxide = "Fe(OH)3";
-          } else {
-            hydroxide = "Fe(OH)2";
-          }
-        } else if (["Mg", "Ca", "Zn", "Cu", "Pb"].includes(cation)) {
-          hydroxide = `${cation}(OH)2`;
-        } else if (cation === "Al") {
-          hydroxide = "Al(OH)3";
-        } else {
-          hydroxide = `${cation}OH`;
+        // Special case: Ammonium salts produce NH3 gas
+        if (cation === "NH4") {
+          const newSalt = balanceSaltFormula(baseMetal, anion);
+          return [newSalt, "NH3", "H2O"];
         }
         
-        // For the new salt, need to handle the base's anion (OH or O)
-        if (baseCation === "Na" || baseCation === "K") {
-          newSalt = `${baseCation}${anion}`;
-        } else if (["Ca", "Mg", "Ba"].includes(baseCation)) {
-          newSalt = `${baseCation}(${anion})2`;
+        // Form the metal hydroxide using the correct oxidation state
+        let hydroxide;
+        const oxidationState = cationOxidationState || 2; // Default to 2 if not determined
+        
+        if (oxidationState === 1) {
+          hydroxide = `${cation}OH`;
+        } else if (oxidationState === 2) {
+          hydroxide = `${cation}(OH)2`;
+        } else if (oxidationState === 3) {
+          hydroxide = `${cation}(OH)3`;
         } else {
-          newSalt = `${baseCation}${anion}`;
+          hydroxide = `${cation}(OH)${oxidationState}`;
+        }
+        
+        // Form the new salt using proper balancing
+        let newSalt;
+        if (baseHydroxideCount) {
+          // Use the base's oxidation state for proper balancing
+          newSalt = balanceSaltFormulaWithOxidationState(baseMetal, anion, baseHydroxideCount);
+        } else {
+          // Fallback to standard balancing
+          newSalt = balanceSaltFormula(baseMetal, anion);
         }
         
         return [newSalt, hydroxide];
@@ -160,13 +171,20 @@ export const saltReactions = {
         const insolubleAnions = ["S", "CO3", "PO4", "OH"];
         const insolubleWithCl = ["Ag", "Pb", "Hg"];
         const insolubleWithSO4 = ["Ba", "Sr", "Pb"];
+        const insolubleWithI = ["Ag", "Pb", "Hg"]; // Heavy metals form insoluble iodides
         
         // Check some common insoluble salt patterns
         if (anion2 === "Cl" && insolubleWithCl.includes(cation1)) return true;
         if (anion1 === "Cl" && insolubleWithCl.includes(cation2)) return true;
         if (anion2 === "SO4" && insolubleWithSO4.includes(cation1)) return true;
         if (anion1 === "SO4" && insolubleWithSO4.includes(cation2)) return true;
+        if (anion2 === "I" && insolubleWithI.includes(cation1)) return true;
+        if (anion1 === "I" && insolubleWithI.includes(cation2)) return true;
         if (insolubleAnions.includes(anion1) || insolubleAnions.includes(anion2)) return true;
+        
+        // Check for slightly soluble to insoluble exchanges
+        // CaSO4 is less soluble than most sulfates
+        if ((cation1 === "Ca" && anion2 === "SO4") || (cation2 === "Ca" && anion1 === "SO4")) return true;
         
         // Additionally, check known examples from reference
         if ((cation1 === "Ag" && anion1 === "NO3" && cation2 === "Na" && anion2 === "Cl") ||
@@ -177,14 +195,27 @@ export const saltReactions = {
         return false;
       },
       products: (salt1, salt2) => {
-        const { cation: cation1, anion: anion1 } = extractSaltComponents(salt1);
-        const { cation: cation2, anion: anion2 } = extractSaltComponents(salt2);
+        const ionInfo1 = extractIonsWithOxidationState(salt1);
+        const ionInfo2 = extractIonsWithOxidationState(salt2);
+        
+        const { cation: cation1, anion: anion1, cationOxidationState: oxidation1 } = ionInfo1;
+        const { cation: cation2, anion: anion2, cationOxidationState: oxidation2 } = ionInfo2;
         
         if (!cation1 || !anion1 || !cation2 || !anion2) return null;
         
-        // Form the new salt combinations
-        const newSalt1 = `${cation1}${anion2}`;
-        const newSalt2 = `${cation2}${anion1}`;
+        // Form the new salt combinations using oxidation-state aware balancing
+        let newSalt1, newSalt2;
+        if (oxidation1) {
+          newSalt1 = balanceSaltFormulaWithOxidationState(cation1, anion2, oxidation1);
+        } else {
+          newSalt1 = balanceSaltFormula(cation1, anion2);
+        }
+        
+        if (oxidation2) {
+          newSalt2 = balanceSaltFormulaWithOxidationState(cation2, anion1, oxidation2);
+        } else {
+          newSalt2 = balanceSaltFormula(cation2, anion1);
+        }
         
         return [newSalt1, newSalt2];
       },
@@ -198,7 +229,7 @@ export const saltReactions = {
         const { anion } = extractSaltComponents(salt);
         
         // Known decomposable salt types
-        const decomposableAnions = ["CO3", "HCO3", "NO3", "OH"];
+        const decomposableAnions = ["CO3", "HCO3", "NO3", "OH", "SO4", "ClO3", "ClO4"];
         return decomposableAnions.includes(anion);
       },
       products: (salt) => {
@@ -221,6 +252,9 @@ export const saltReactions = {
           } else if (["Mg", "Ca", "Ba"].includes(cation)) {
             // Alkaline earth metal nitrates: M(NO3)2 → MO + NO2 + O2
             return [`${cation}O`, "NO2", "O2"];
+          } else if (cation === "Ag") {
+            // Silver nitrate decomposes to metal: 2AgNO3 → 2Ag + 2NO2 + O2
+            return ["Ag", "NO2", "O2"];
           } else {
             // Other metal nitrates (simplified)
             return [`${cation}O`, "NO2", "O2"];
@@ -236,6 +270,15 @@ export const saltReactions = {
           } else {
             return [`${cation}O`, "H2O"];
           }
+        } else if (anion === "SO4") {
+          // Sulfate decomposition (high temperature): MSO4 → MO + SO3
+          return [`${cation}O`, "SO3"];
+        } else if (anion === "ClO3") {
+          // Chlorate decomposition: MClO3 → MCl + O2
+          return [`${cation}Cl`, "O2"];
+        } else if (anion === "ClO4") {
+          // Perchlorate decomposition: MClO4 → MCl + 2O2
+          return [`${cation}Cl`, "O2"];
         }
         
         return null;
@@ -248,7 +291,12 @@ export const saltReactions = {
   [saltCategories.ACIDIC]: {
     // Acidic Salt + Base → Normal Salt + Water
     "base": {
-      possible: true,
+      possible: (salt, base) => {
+        // Acidic salts can react with bases to form normal salts
+        const { anion } = extractSaltComponents(salt);
+        const acidicAnions = ["HSO4", "HCO3", "H2PO4", "HPO4"];
+        return acidicAnions.includes(anion);
+      },
       products: (salt, base) => {
         const { cation, anion } = extractSaltComponents(salt);
         const { cation: baseCation } = extractIons(base);
@@ -311,7 +359,11 @@ export const saltReactions = {
   [saltCategories.BASIC]: {
     // Basic Salt + Acid → Normal Salt + Water
     "acid": {
-      possible: true,
+      possible: (salt, acid) => {
+        // Basic salts can react with acids
+        const { anion } = extractSaltComponents(salt);
+        return anion && anion.includes("OH");
+      },
       products: (salt, acid) => {
         const { cation, anion } = extractSaltComponents(salt);
         const { anion: acidAnion } = extractIons(acid);

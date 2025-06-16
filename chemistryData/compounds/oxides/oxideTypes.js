@@ -210,13 +210,16 @@ export function getOxidationState(formula) {
   // Oxygen typically has -2 oxidation state in oxides (except peroxides and superoxides)
   if (isPeroxide(formula)) {
     // In peroxides, oxygen has -1 oxidation state
-    return (oxygenCount * -1) / elementCount;
+    // Metal oxidation state = +(oxygen count * 1) / element count
+    return (oxygenCount * 1) / elementCount;
   } else if (isSuperoxide(formula)) {
     // In superoxides, oxygen has -1/2 oxidation state
-    return (oxygenCount * -0.5) / elementCount;
+    // Metal oxidation state = +(oxygen count * 0.5) / element count
+    return (oxygenCount * 0.5) / elementCount;
   } else {
     // In normal oxides, oxygen has -2 oxidation state
-    return (oxygenCount * -2) / elementCount;
+    // Metal oxidation state = +(oxygen count * 2) / element count
+    return (oxygenCount * 2) / elementCount;
   }
 }
 
