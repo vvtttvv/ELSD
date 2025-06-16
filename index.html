@@ -40,9 +40,187 @@
                 </div>
                 </div>
             </div>
+
+            <div class="visualization-controls">
+                <h3>🔬 Molecular Visualization Settings</h3>
+                <div class="toggle-container">
+                    <span class="toggle-label active" id="kekuleLabel">Kekule.js</span>
+                    <div class="toggle-switch" id="visualizationToggle">
+                        <div class="toggle-slider"></div>
+                    </div>
+                    <span class="toggle-label" id="jsmolLabel">JSmol</span>
+                </div>
+                <div class="current-mode-info">
+                    <span id="currentMode">Current Mode: Kekule.js (2D + 3D)</span>
+                </div>
+            </div>
+
             <div id="visualize_part">
-                <div id="visualize"></div>
-                <div id="visualize3d"></div>
+                <div class="visualization-container kekule-mode" id="visualizationContainer">
+                    <!-- 2D Panel (Kekule only) -->
+                    <div class="viz-panel">
+                        <div class="viz-panel-header">
+                            2D Structure View
+                            <div class="status-indicator" id="status2d"></div>
+                        </div>
+                        <div class="viz-panel-content">
+                            <div id="visualize">
+                                <div class="loading-placeholder">
+                                    <div class="loading-spinner"></div>
+                                    <p>Ready for 2D visualization</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3D Panel (Kekule) -->
+                    <div class="viz-panel">
+                        <div class="viz-panel-header">
+                            3D Structure View
+                            <div class="status-indicator" id="status3d"></div>
+                        </div>
+                        <div class="viz-panel-content">
+                            <div id="visualize3d">
+                                <div class="loading-placeholder">
+                                    <div class="loading-spinner"></div>
+                                    <p>Ready for 3D visualization</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- JSmol Container (shown only in JSmol mode) -->
+                    <div class="viz-panel jsmol-main-panel">
+                        <div class="jsmol-content-wrapper">
+                            <div class="jsmol-header-centered">
+                                <h3>🧪 JSmol Interactive Molecular Viewer</h3>
+                            </div>
+                            <div class="jsmol-layout">
+                                <!-- JSmol Viewer Panel -->
+                                <div class="jsmol-viewer-panel">
+                                    <div class="jsmol-viewer-header">
+                                        3D Interactive View
+                                        <div class="status-indicator inactive" id="statusJsmol"></div>
+                                    </div>
+                                    <div class="jsmol-viewer-content">
+                                        <div id="jsmolContainer">
+                                            <div class="loading-placeholder">
+                                                <div class="loading-spinner"></div>
+                                                <p>Ready for JSmol visualization</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Control Panel -->
+                                <div class="jsmol-control-panel">
+                                    <h4>🎛️ Visualization Controls</h4>
+                                    <div class="jsmol-control-content">
+                                        <div class="control-columns">
+                                            <!-- Left Column -->
+                                            <div class="control-column">
+                                                <div class="control-section">
+                                                    <h5>Representation</h5>
+                                                    <div class="control-buttons">
+                                                        <button onclick="setJSmolStyle('ballAndStick')" class="control-btn active" id="ballStickBtn">Ball & Stick</button>
+                                                        <button onclick="setJSmolStyle('stick')" class="control-btn" id="stickBtn">Stick</button>
+                                                        <button onclick="setJSmolStyle('spacefill')" class="control-btn" id="spacefillBtn">Spacefill</button>
+                                                        <button onclick="setJSmolStyle('wireframe')" class="control-btn" id="wireframeBtn">Wireframe</button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="control-section">
+                                                    <h5>Background</h5>
+                                                    <div class="control-buttons">
+                                                        <button onclick="setJSmolBackground('white')" class="control-btn active" id="whiteBgBtn">White</button>
+                                                        <button onclick="setJSmolBackground('black')" class="control-btn" id="blackBgBtn">Black</button>
+                                                        <button onclick="setJSmolBackground('gray')" class="control-btn" id="grayBgBtn">Gray</button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="control-section">
+                                                    <h5>Quality</h5>
+                                                    <div class="control-buttons">
+                                                        <button onclick="toggleJSmolQuality()" class="control-btn" id="qualityBtn">High Quality</button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="control-section">
+                                                    <h5>MEP Surfaces</h5>
+                                                    <div class="control-buttons">
+                                                        <button onclick="setJSmolMEP('lucent')" class="control-btn" id="mepLucentBtn">MEP Lucent</button>
+                                                        <button onclick="setJSmolMEP('opaque')" class="control-btn" id="mepOpaqueBtn">MEP Opaque</button>
+                                                        <button onclick="setJSmolMEP('off')" class="control-btn" id="mepOffBtn">Hide Surface</button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="control-section">
+                                                    <h5>Export</h5>
+                                                    <div class="control-buttons">
+                                                        <button onclick="exportJSmolImage()" class="control-btn" id="exportBtn">Save Image</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Right Column -->
+                                            <div class="control-column">
+                                                <div class="control-section">
+                                                    <h5>Dipoles</h5>
+                                                    <div class="control-buttons">
+                                                        <button onclick="toggleJSmolBondDipoles()" class="control-btn" id="bondDipolesBtn">Bond Dipoles</button>
+                                                        <button onclick="toggleJSmolOverallDipole()" class="control-btn" id="overallDipoleBtn">Overall Dipole</button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="control-section">
+                                                    <h5>Calculations</h5>
+                                                    <div class="control-buttons">
+                                                        <button onclick="minimizeJSmolEnergy()" class="control-btn" id="minimizeBtn">Energy Minimization</button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="control-section">
+                                                    <h5>Tools</h5>
+                                                    <div class="control-buttons">
+                                                        <button onclick="enableJSmolMeasurement('distance')" class="control-btn" id="distanceBtn">Distance</button>
+                                                        <button onclick="enableJSmolMeasurement('angle')" class="control-btn" id="angleBtn">Angle</button>
+                                                        <button onclick="enableJSmolMeasurement('torsion')" class="control-btn" id="torsionBtn">Torsion</button>
+                                                        <button onclick="toggleJSmolCharges()" class="control-btn" id="chargeBtn">Show Charges</button>
+                                                        <button onclick="clearJSmolMeasurements()" class="control-btn" id="clearBtn">Clear</button>
+                                                        <button onclick="resetJSmolView()" class="control-btn" id="resetBtn">Reset View</button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="control-section">
+                                                    <h5>📊 Molecule Info</h5>
+                                                    <div class="molecule-info" id="moleculeInfo">
+                                                        <div class="info-item">
+                                                            <span class="info-label">Name:</span>
+                                                            <span class="info-value" id="moleculeName">Loading...</span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">Formula:</span>
+                                                            <span class="info-value" id="moleculeFormula">-</span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">Atoms:</span>
+                                                            <span class="info-value" id="atomCount">-</span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">Weight:</span>
+                                                            <span class="info-value" id="molecularWeight">-</span>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
  

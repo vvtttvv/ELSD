@@ -34,7 +34,7 @@ export default class Lexer {
           this.tokenizeIdentifierOrKeyword();
         } else if (this.isDigit(ch)) {
           this.tokenizeNumber();
-        } else if (ch === '"') {
+        } else if (ch === '"' || ch === "'") {
           this.tokenizeString();
         } else {
           this.tokenizeSymbol();
@@ -113,19 +113,23 @@ export default class Lexer {
     }
   
     tokenizeString() {
-      this.advance(); // skip the opening "
+      const quoteChar = this.advance(); // skip the opening quote and remember which type
       let start = this.position;
-      while (!this.isAtEnd() && this.peek() !== '"') {
+      while (!this.isAtEnd() && this.peek() !== quoteChar) {
         if (this.peek() === '\\') {
+          this.advance(); // skip escape character
+          if (!this.isAtEnd()) {
+            this.advance(); // skip escaped character
+          }
+        } else {
           this.advance();
         }
-        this.advance();
       }
       if (this.isAtEnd()) {
         throw new Error("Unterminated string literal");
       }
       const value = this.input.substring(start, this.position);
-      this.advance(); // skip the closing "
+      this.advance(); // skip the closing quote
       this.tokens.push({ type: "STRING_TOKEN", value });
     }
   
@@ -148,10 +152,11 @@ export default class Lexer {
         case '(':
         case ')':
         case '{':
+        case '}':
         case ',':
+        case ':':
           this.tokens.push({ type: "PUNCTUATION_TOKEN", value: ch });
           break;
-        case '}':
         case ';':
             this.tokens.push({ type: "EXP", value: ch });
             break;

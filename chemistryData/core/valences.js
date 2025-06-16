@@ -145,7 +145,10 @@ export const elementValences = {
     "HSO3": -1,        // Bisulfite/Hydrogen sulfite
     "H2PO4": -1,       // Dihydrogen phosphate
     "MnO4": -1,        // Permanganate
-    
+    "HCOO": -1,        // Formate
+    "C2H5COO": -1,     // Propionate
+    "C6H5COO": -1,     // Benzoate
+
     "CO3": -2,         // Carbonate
     "SO4": -2,         // Sulfate
     "SO3": -2,         // Sulfite
@@ -155,10 +158,10 @@ export const elementValences = {
     "Cr2O7": -2,       // Dichromate
     "SiO3": -2,        // Silicate
     "O2": -2,          // Peroxide
-    
+
     "PO4": -3,         // Phosphate
     "AsO4": -3,        // Arsenate
-    
+
     "Fe(CN)6": -4,     // Ferrocyanide
   };
 
@@ -174,6 +177,11 @@ export const elementValences = {
     // Special species that imply polyatomic ions
     polyatomicCationMatch: {
       "NH4OH": "NH4"
+    },
+
+    // Special anion valences based on source acid
+    anionFromAcid: {
+      "S": -2  // Sulfur from H2S should be treated as sulfide (S²⁻)
     }
   };
   
@@ -194,6 +202,11 @@ export const elementValences = {
     // Check override first
     if (valenceOverrides.reactantSpecific[element]) {
       return valenceOverrides.reactantSpecific[element];
+    }
+
+    // Check for special anion valences (for anions from specific acids)
+    if (valenceOverrides.anionFromAcid[element]) {
+      return valenceOverrides.anionFromAcid[element];
     }
 
     const valences = elementValences[element];
@@ -224,7 +237,63 @@ export const elementValences = {
 
     const formatIon = (ion, count) => {
       if (count === 1) return ion;
-      const needsParens = ion.length > 1 && /[^A-Za-z]/.test(ion);
+      // Only polyatomic ions need parentheses when count > 1
+      const needsParens = polyatomicIons.hasOwnProperty(ion);
+      return needsParens ? `(${ion})${count}` : `${ion}${count}`;
+    };
+
+    return `${formatIon(cation, catCount)}${formatIon(anion, anCount)}`;
+  }
+
+  /**
+   * Balances a salt formula using a specific oxidation state for the cation.
+   * This is useful when we know the exact oxidation state from the reactant (e.g., from an oxide).
+   */
+  export function balanceSaltFormulaWithOxidationState(cation, anion, cationOxidationState) {
+    const catVal = Math.abs(cationOxidationState);
+    const anVal = Math.abs(polyatomicIons[anion] || getMostLikelyValence(anion));
+
+    if (!catVal || !anVal) return null;
+
+    const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+    const lcm = (a, b) => (a * b) / gcd(a, b);
+
+    const LCM = lcm(catVal, anVal);
+    const catCount = LCM / catVal;
+    const anCount = LCM / anVal;
+
+    const formatIon = (ion, count) => {
+      if (count === 1) return ion;
+      // Only polyatomic ions need parentheses when count > 1
+      const needsParens = polyatomicIons.hasOwnProperty(ion);
+      return needsParens ? `(${ion})${count}` : `${ion}${count}`;
+    };
+
+    return `${formatIon(cation, catCount)}${formatIon(anion, anCount)}`;
+  }
+
+  /**
+   * Balances a salt formula with special handling for organic salts.
+   * Uses standard chemical formula format: cation followed by anion (e.g., NaCH3COO).
+   */
+  export function balanceSaltFormulaOrganic(cation, anion, context = null) {
+    // Use standard salt balancing for all cases - organic anions should still follow cation-anion order
+    const catVal = Math.abs(polyatomicIons[cation] || getMostLikelyValence(cation, context));
+    const anVal = Math.abs(polyatomicIons[anion] || getMostLikelyValence(anion));
+
+    if (!catVal || !anVal) return null;
+
+    const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+    const lcm = (a, b) => (a * b) / gcd(a, b);
+
+    const LCM = lcm(catVal, anVal);
+    const catCount = LCM / catVal;
+    const anCount = LCM / anVal;
+
+    const formatIon = (ion, count) => {
+      if (count === 1) return ion;
+      // Only polyatomic ions need parentheses when count > 1
+      const needsParens = polyatomicIons.hasOwnProperty(ion);
       return needsParens ? `(${ion})${count}` : `${ion}${count}`;
     };
 

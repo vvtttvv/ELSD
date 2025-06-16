@@ -71,7 +71,12 @@ export const acidRadicals = {
   "HClO3": "ClO3",
   "HClO4": "ClO4",
   "H2MnO4": "MnO4",
-  "HMnO4": "MnO4"
+  "HMnO4": "MnO4",
+  // Organic acids
+  "HCOOH": "HCOO",     // Formic acid -> Formate ion
+  "CH3COOH": "CH3COO", // Acetic acid -> Acetate ion
+  "C2H5COOH": "C2H5COO", // Propionic acid -> Propionate ion
+  "C6H5COOH": "C6H5COO"  // Benzoic acid -> Benzoate ion
 };
 
 //Mapping of acid radicals to their corresponding anion names
@@ -97,7 +102,12 @@ export const anionNames = {
   "ClO2": "chlorite",
   "ClO3": "chlorate",
   "ClO4": "perchlorate",
-  "MnO4": "permanganate"
+  "MnO4": "permanganate",
+  // Organic acid anions
+  "HCOO": "formate",
+  "CH3COO": "acetate",
+  "C2H5COO": "propionate",
+  "C6H5COO": "benzoate"
 };
 
 //Mapping of acids to their corresponding oxide sources
@@ -143,6 +153,13 @@ export function isAcid(formula) {
 export function extractAcidRadical(formula) {
   // Check if it's in our known list
   if (acidRadicals[formula]) return acidRadicals[formula];
+  
+  // Handle organic acids with COOH pattern
+  if (formula.includes('COOH')) {
+    // For organic acids like CH3COOH, HCOOH, etc.
+    // Replace COOH with COO to get the anion
+    return formula.replace('COOH', 'COO');
+  }
   
   // Remove H atoms from the front
   if (formula.startsWith('H')) {
