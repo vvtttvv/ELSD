@@ -61,23 +61,60 @@ isPossible(reactionString, options = {}) {
       return { valid: false, error: "Missing reactants or products", possible: false };
     }
 
-    const handlers = [
-      this.acidHandler,
-      this.baseHandler,
-      this.oxideHandler,
-      this.saltHandler
-    ];
-
-    for (const handler of handlers) {
-      console.log("Trying handler:", handler.constructor.name);
-      try {
-        const result = handler.analyzeReaction(reactionString, options.concentratedAcid || false);
-        if (result?.possible) {
-          console.log("Match found in:", handler.constructor.name);
-          return result;
+    // For single reactant decomposition, try handlers in priority order based on compound type
+    if (reactants.length === 1) {
+      const compound = reactants[0];
+      
+      // Priority order for decomposition: Acid > Base > Oxide > Salt
+      // This is because some compounds can be classified as multiple types
+      const prioritizedHandlers = [];
+      
+      if (this.acidHandler.isAcid(compound)) {
+        prioritizedHandlers.push(this.acidHandler);
+      }
+      if (this.baseHandler.isBase(compound)) {
+        prioritizedHandlers.push(this.baseHandler);
+      }
+      if (this.oxideHandler.isOxide(compound)) {
+        prioritizedHandlers.push(this.oxideHandler);
+      }
+      if (this.saltHandler.isSalt(compound)) {
+        prioritizedHandlers.push(this.saltHandler);
+      }
+      
+      // Try prioritized handlers first
+      for (const handler of prioritizedHandlers) {
+        console.log("Trying prioritized handler for decomposition:", handler.constructor.name);
+        try {
+          const result = handler.analyzeReaction(reactionString, options.concentratedAcid || false);
+          if (result?.possible) {
+            console.log("Match found in:", handler.constructor.name);
+            return result;
+          }
+        } catch (err) {
+          console.warn("Handler error in", handler.constructor.name, ":", err.message);
         }
-      } catch (err) {
-        console.warn("Handler error in", handler.constructor.name, ":", err.message);
+      }
+    } else {
+      // For multi-reactant reactions, prioritize based on reaction type
+      const handlers = [
+        this.acidHandler,
+        this.baseHandler,    // Base handler should come before oxide handler for base+oxide reactions
+        this.saltHandler,
+        this.oxideHandler    // Oxide handler comes last to avoid interfering with base+oxide reactions
+      ];
+
+      for (const handler of handlers) {
+        console.log("Trying handler:", handler.constructor.name);
+        try {
+          const result = handler.analyzeReaction(reactionString, options.concentratedAcid || false);
+          if (result?.possible) {
+            console.log("Match found in:", handler.constructor.name);
+            return result;
+          }
+        } catch (err) {
+          console.warn("Handler error in", handler.constructor.name, ":", err.message);
+        }
       }
     }
 

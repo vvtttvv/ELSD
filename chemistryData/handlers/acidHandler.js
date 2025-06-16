@@ -1,5 +1,5 @@
 import { isAcid, classifyAcid, acidCategories, classifyAcidByStrength, determineAcidType, determineBasicity } from '../compounds/acids/acidTypes.js';
-import { canReact, predictProducts, getReactionInfo } from '../compounds/acids/acidReactivity.js';
+import { canReact, predictProducts, getReactionInfo, acidReactions } from '../compounds/acids/acidReactivity.js';
 import { classifyOxide } from '../compounds/oxides/oxideTypes.js';
 import { isMetal } from '../core/elements.js';
 
@@ -99,31 +99,74 @@ export class AcidHandler {
       };
     }
     
+    // Auto-detect concentrated acid reactions based on products
+    if (!isConcentrated) {
+      isConcentrated = this.detectConcentratedAcid(reactants, givenProducts);
+      if (isConcentrated) {
+        console.log("Auto-detected concentrated acid reaction based on products");
+      }
+    }
+    
     // For single reactant (decomposition with heat)
     if (reactants.length === 1) {
       const acidFormula = reactants[0];
       
-      // Check for thermal decomposition
-      const decompositionInfo = getReactionInfo(acidFormula, "heat");
-      if (!decompositionInfo) {
+      // Check if it's an acid that can decompose
+      if (this.isAcid(acidFormula)) {
+        // For single reactant decomposition, check if the acid can decompose
+        const acidStrength = classifyAcidByStrength(acidFormula);
+        
+        // Check if this acid has decomposition reactions defined
+        const heatReaction = acidReactions[acidStrength]["heat"];
+        if (!heatReaction || !heatReaction.possible(acidFormula)) {
+          return {
+            valid: false,
+            possible: false,
+            error: "This acid does not undergo thermal decomposition under normal heating conditions",
+            reactants,
+            givenProducts,
+            reactantTypes: {
+              [acidFormula]: this.getAcidTypeName(acidFormula)
+            }
+          };
+        }
+        
+        // Get the decomposition products
+        const products = heatReaction.products(acidFormula);
+        if (!products) {
+          return {
+            valid: false,
+            possible: false,
+            error: "Failed to determine decomposition products",
+            reactants,
+            givenProducts,
+            reactantTypes: {
+              [acidFormula]: this.getAcidTypeName(acidFormula)
+            }
+          };
+        }
+        
+        return {
+          valid: true,
+          possible: true,
+          reactants,
+          givenProducts,
+          predictedProducts: products,
+          reactionType: heatReaction.reactionType,
+          conditions: heatReaction.conditions,
+          reactantTypes: {
+            [acidFormula]: this.getAcidTypeName(acidFormula)
+          },
+          productsMatch: this.compareProducts(products, givenProducts)
+        };
+      } else {
         return {
           valid: false,
-          error: "This acid does not undergo thermal decomposition",
+          error: "Single reactant is not an acid",
           reactants,
           givenProducts
         };
       }
-      
-      return {
-        valid: true,
-        possible: true,
-        reactants,
-        givenProducts,
-        predictedProducts: decompositionInfo.products,
-        reactionType: decompositionInfo.reactionType,
-        conditions: decompositionInfo.conditions,
-        productsMatch: this.compareProducts(decompositionInfo.products, givenProducts)
-      };
     }
     
     // For binary reactions
@@ -162,7 +205,8 @@ export class AcidHandler {
           [acidFormula]: this.getAcidTypeName(acidFormula),
           [otherFormula]: this.getReactantTypeName(otherFormula)
         },
-        productsMatch: this.compareProducts(reactionInfo.products, givenProducts)
+        productsMatch: this.compareProducts(reactionInfo.products, givenProducts),
+        isConcentrated
       };
     }
     
@@ -173,6 +217,27 @@ export class AcidHandler {
       reactants,
       givenProducts
     };
+  }
+
+  //Detects if a reaction should be treated as concentrated acid based on products
+  detectConcentratedAcid(reactants, givenProducts) {
+    // Look for acid and metal in reactants
+    const acid = reactants.find(r => this.isAcid(r));
+    const metal = reactants.find(r => isMetal(r));
+    
+    if (!acid || !metal) return false;
+    
+    // Check for concentrated acid indicators in products
+    const concentratedIndicators = {
+      "H2SO4": ["SO2"],   // Concentrated H2SO4 produces SO2
+      "HNO3": ["NO2"]     // Concentrated HNO3 produces NO2
+    };
+    
+    const indicators = concentratedIndicators[acid];
+    if (!indicators) return false;
+    
+    // Check if any indicator is present in products
+    return indicators.some(indicator => givenProducts.includes(indicator));
   }
 
   //Gets a descriptive name for the acid type
