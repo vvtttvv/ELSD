@@ -447,7 +447,7 @@ show(base + " + O2 -> CO2 + H2O");
     <div class="doc-section">
       <h4><code>getMolecWeight(formula)</code></h4>
       <p>Calculates molecular weight of a compound.</p>
-      <pre><code>show(getMolecWeight("H2O"));</code></pre>
+      <pre><code>show(getMolecWeight("H2O"));</code> <code>show(getMolecWeight("H2O", "true"));</code></pre>
       <p><strong>Output:</strong><br>18.015</p>
     </div>
 
@@ -482,7 +482,7 @@ show(base + " + O2 -> CO2 + H2O");
       <h4><code>visualize(formula)</code></h4>
       <p>Displays a 2D and 3D graphical representation of a chemical formula or molecule.<br>
       It's recommended to use the name (e.g., "benzene") for higher accuracy.</p>
-      <pre><code>visualize("C6H6");</code>  |  <code>visualize("benzene");</code></pre>
+      <pre><code>visualize("C6H6");</code> | <code>visualize("benzene"); </code> | <code> visualize("C6H6", '{"mode":"jsmol", "style":"ballstick", "background":"black"}')</code>
     </div>
   `;
 };
