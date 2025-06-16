@@ -13,6 +13,7 @@ import { balanceEquation } from "./chemistryData/equationBalancer.js";
 import { explainBalancingSteps } from "./chemistryData/explainBalancingSteps.js";
 import { isAcid as checkIfAcid } from "./chemistryData/compounds/acids/acidTypes.js";
 import { isBase as checkIfBase } from "./chemistryData/compounds/bases/baseTypes.js";
+import { isotopeMasses } from "./chemistryData/core/isotopes.js";
 
 
 export default class Interpretor {
@@ -224,8 +225,10 @@ export default class Interpretor {
       case "getReducings":
         return this.getReducingAgents(args[0]);
       case "getMolecWeight":
-        console.log("Checking reaction possibility for:", args[0]);
-        return this.getMolecularWeight(args[0]);
+        const formula = args[0]; 
+        const includeIsotopes = Boolean(args[1]) || false;
+        console.log("Calculating molecular weight for:", formula, "Include isotopes:", includeIsotopes);
+        return this.getMolecularWeight(formula, includeIsotopes);
       case "visualize":
         return this.visualize(args[0]);
       case "getVolume":
@@ -466,19 +469,39 @@ export default class Interpretor {
     return agents.map(agent => `Reducing Agent: ${agent}`).join("\n");
   }
 
-  getMolecularWeight(formula) {
-    // First, try a lookup for common hydrocarbons.
-
-    if (hydrocarbonWeights[formula]) {
+  getMolecularWeight(formula, includeIsotopes = false) {
+    if (!includeIsotopes && hydrocarbonWeights.hasOwnProperty(formula)) {
       return hydrocarbonWeights[formula];
     }
 
-    // Otherwise, compute weight using periodic table values.
-    const parsed = this.parseFormula(formula);
+    const parsed = includeIsotopes
+      ? this.parseFormulaWithIsotopes(formula)
+      : this.parseFormula(formula);
+
     return parsed.reduce((sum, [element, count]) => {
-      return sum + (periodicTable[element] || 0) * count;
+      let mass;
+
+      if (includeIsotopes) {
+        if (isotopeMasses[element] != null) {
+          mass = isotopeMasses[element];
+        } else {
+          // fallback на обычный элемент
+          const m = element.match(/^\d*([A-Z][a-z]*)$/);
+          const baseEl = m ? m[1] : element;
+          mass = periodicTable[baseEl] || 0;
+        }
+      } else {
+        const m = element.match(/^\d*([A-Z][a-z]*)$/);
+        const baseEl = m ? m[1] : element;
+        mass = periodicTable[baseEl] || 0;
+      }
+
+      return sum + mass * count;
     }, 0);
   }
+
+
+
 
   visualize(input, options = null) {
     if (!input || typeof input !== "string") {
@@ -1124,32 +1147,81 @@ async renderWithJSmol(smiles, options) {
     return num;
   }
 
- parseFormula(formula) {
+parseFormula(formula) {
   if (!formula || typeof formula !== "string") {
     throw new Error("Formula must be a non-empty string.");
   }
 
   const stack = [{}];
-  const regex = /([A-Z][a-z]*)(\d*)|(\()|(\))(\d*)/g;
+  const regex = /(\d*[A-Z][a-z]*)(\d*)|(\()|(\))(\d*)/g;
   let match;
   let openParens = 0;
 
   while ((match = regex.exec(formula))) {
     if (match[1]) {
-      // Element + optional count
+      const rawElement = match[1]; 
+      const count = parseInt(match[2] || "1");
+      const top = stack[stack.length - 1];
+      top[rawElement] = (top[rawElement] || 0) + count;
+    } else if (match[3]) { 
+      stack.push({});
+      openParens++;
+    } else if (match[4]) { 
+      if (stack.length === 1) {
+        throw new Error(`Unexpected closing parenthesis in "${formula}"`);
+      }
+      openParens--;
+      const group = stack.pop();
+      const multiplier = parseInt(match[5] || "1");
+      const top = stack[stack.length - 1];
+      for (const el in group) {
+        top[el] = (top[el] || 0) + group[el] * multiplier;
+      }
+    }
+  }
+
+  if (openParens !== 0 || stack.length !== 1) {
+    throw new Error(`Unbalanced parentheses in formula "${formula}"`);
+  }
+
+  const result = Object.entries(stack[0]);
+  if (result.length === 0) {
+    throw new Error(`Failed to parse any elements from formula "${formula}"`);
+  }
+
+  return result;
+}
+
+
+parseFormulaWithIsotopes(formula) { 
+  if (!formula || typeof formula !== "string") {
+    throw new Error("Formula must be a non-empty string.");
+  }
+
+  const stack = [{}];
+
+  // Распознаёт: 13C, 2H, H2, (OH)2 и т.п.
+  const regex = /(\d+[A-Z][a-z]*|[A-Z][a-z]*)(\d*)|(\()|(\))(\d*)/g;
+
+  let match;
+  let openParens = 0;
+
+  while ((match = regex.exec(formula))) {
+    if (match[1]) {
       const el = match[1];
       const count = parseInt(match[2] || "1");
       const top = stack[stack.length - 1];
       top[el] = (top[el] || 0) + count;
+
     } else if (match[3]) {
-      // Opening parenthesis
       stack.push({});
       openParens++;
+
     } else if (match[4]) {
-      // Closing parenthesis
       if (stack.length === 1) {
         throw new Error(`Unexpected closing parenthesis in "${formula}"`);
       }
+
       openParens--;
       const group = stack.pop();
       const multiplier = parseInt(match[5] || "1");
