@@ -44,12 +44,30 @@ visualize("C6H6", '{"mode":"jsmol", "style":"ballstick", "background":"black"}')
 
 #### `dipoles` - Dipole Visualization
 - `"hide"` - No dipoles (default)
-- `"show"` - Display molecular dipoles
+- `"bond"` - Display bond dipoles only
+- `"overall"` - Display overall molecular dipole only
+- `"show"` - Display both bond and overall dipoles (legacy support)
+
+#### `charges` - Charge Display
+- `"hide"` - No charge labels (default)
+- `"show"` - Display partial charges on atoms
+
+#### `minimize` - Energy Minimization
+- `false` - No energy minimization (default)
+- `true` - Perform energy minimization on the structure
 
 #### `mep` - Molecular Electrostatic Potential
 - `"off"` - No MEP surface (default)
 - `"lucent"` - Translucent MEP surface
 - `"opaque"` - Opaque MEP surface
+
+#### `tools` - Measurement Tools
+- Array of tool names: `["distance", "angle", "torsion", "charges"]`
+- Individual tools:
+  - `"distance"` - Enable distance measurement
+  - `"angle"` - Enable angle measurement  
+  - `"torsion"` - Enable torsion measurement
+  - `"charges"` - Enable charge display (alternative to charges parameter)
 
 #### `export` - Image Export
 - `"save"` - Automatically export molecular image
@@ -72,7 +90,7 @@ visualize("C17H19NO3", "mode:jsmol, style:spacefill, background:black, mep:lucen
 
 #### Methane Structure
 ```javascript
-visualize("CH4", "mode:jsmol, style:ballstick, dipoles:show, background:white");
+visualize("CH4", "mode:jsmol, style:ballstick, dipoles:bond, charges:show, background:white");
 ```
 
 #### Ethylene Properties
@@ -94,36 +112,51 @@ visualize("C6H12O6", "mode:jsmol, style:ballstick, mep:opaque, background:white"
 
 #### Amino Acid Structure
 ```javascript
-visualize("C3H7NO2", "mode:jsmol, style:spacefill, dipoles:show, background:black");
+visualize("C3H7NO2", "mode:jsmol, style:spacefill, dipoles:overall, charges:show, minimize:true, background:black");
 ```
 
 ### Advanced Configurations
 
 #### Research Analysis Setup
 ```javascript
-visualize("C8H10N4O2", "mode:jsmol, style:ballstick, background:black, dipoles:show, quality:high, mep:lucent, export:save");
+visualize("C8H10N4O2", "mode:jsmol, style:ballstick, background:black, dipoles:overall, charges:show, quality:high, mep:lucent, minimize:true, export:save");
 ```
 
 #### Educational Display
 ```javascript
-visualize("H2O", "mode:jsmol, style:spacefill, dipoles:show, background:white, quality:high");
+visualize("H2O", "mode:jsmol, style:spacefill, dipoles:bond, charges:show, background:white, quality:high");
 ```
 
 #### Comparative Study
 ```javascript
-visualize("C6H6", "mode:jsmol, style:wireframe, background:gray, mep:opaque");
+visualize("C6H6", "mode:jsmol, style:wireframe, background:gray, mep:opaque, minimize:true");
+```
+
+#### Comprehensive Analysis
+```javascript
+visualize("C6H12O6", "mode:jsmol, style:ballstick, dipoles:overall, charges:show, minimize:true, tools:distance,angle, background:white, quality:high");
 ```
 
 ## JSON Format Examples
 
 ### Complex Molecule Analysis
 ```javascript
-visualize("C20H25N3O", '{"mode":"jsmol", "style":"ballstick", "background":"black", "dipoles":"show", "quality":"high"}');
+visualize("C20H25N3O", '{"mode":"jsmol", "style":"ballstick", "background":"black", "dipoles":"overall", "charges":"show", "quality":"high"}');
 ```
 
 ### Surface Visualization
 ```javascript
-visualize("C10H8", '{"mode":"jsmol", "style":"spacefill", "mep":"lucent", "background":"white", "export":"save"}');
+visualize("C10H8", '{"mode":"jsmol", "style":"spacefill", "mep":"lucent", "background":"white", "minimize":true, "export":"save"}');
+```
+
+### Research Grade Analysis
+```javascript
+visualize("C6H6", '{"mode":"jsmol", "style":"ballstick", "background":"white", "dipoles":"bond", "charges":"show", "minimize":true, "tools":["distance","angle","charges"], "quality":"high"}');
+```
+
+### Educational Demonstration
+```javascript
+visualize("CH4", '{"mode":"jsmol", "style":"spacefill", "dipoles":"hide", "charges":"show", "background":"gray", "tools":["distance"]}');
 ```
 
 ## Visual Feature Guide
@@ -152,17 +185,56 @@ visualize("C10H8", '{"mode":"jsmol", "style":"spacefill", "mep":"lucent", "backg
 
 ### Dipole Visualization
 
-#### Bond Dipoles
-- **Visual Indicator**: Yellow arrow vectors along individual bonds
+#### Bond Dipoles (`dipoles:"bond"`)
+- **Visual Indicator**: Arrow vectors along individual bonds
 - **Information Displayed**: Polar bond direction and relative magnitude
 - **Interpretation**: Arrow points from positive to negative charge
 - **Educational Applications**: Understanding bond polarity, predicting molecular behavior
+- **Usage**: Best for analyzing individual bond polarities
 
-#### Overall Molecular Dipole
-- **Visual Indicator**: Red arrow vector representing net molecular dipole
+#### Overall Molecular Dipole (`dipoles:"overall"`)
+- **Visual Indicator**: Blue arrow vector representing net molecular dipole
 - **Information Displayed**: Overall molecular polarity direction and magnitude
 - **Interpretation**: Arrow length indicates dipole strength
 - **Educational Applications**: Comparing molecular polarities, predicting solubility
+- **Usage**: Best for understanding overall molecular polarity
+
+#### Combined Display (`dipoles:"show"`)
+- **Visual Indicator**: Both bond and molecular dipoles displayed
+- **Information Displayed**: Complete dipole analysis
+- **Educational Applications**: Comprehensive polarity analysis
+- **Usage**: Legacy option for backward compatibility
+
+#### Hidden Dipoles (`dipoles:"hide"`)
+- **Visual Indicator**: No dipole arrows displayed
+- **Usage**: Clean molecular structure view without dipole information
+
+### Charge Display Features
+
+#### Partial Charge Labels (`charges:"show"`)
+- **Visual Indicator**: Yellow-backgrounded labels showing partial charges
+- **Information Displayed**: Calculated partial charges for each atom
+- **Interpretation**: Positive values indicate electron-poor atoms, negative values indicate electron-rich atoms
+- **Educational Applications**: Understanding charge distribution, predicting reactivity
+- **Usage**: Excellent for electronegativity and polarity analysis
+
+#### Hidden Charges (`charges:"hide"`)
+- **Visual Indicator**: No charge labels displayed
+- **Usage**: Clean molecular structure view without charge information
+
+### Energy Minimization Features
+
+#### Energy Minimization (`minimize:true`)
+- **Process**: Optimizes molecular geometry using MMFF94 force field
+- **Duration**: Typically 2-3 seconds for small molecules
+- **Steps**: Default 100 steps with 0.001 criterion
+- **Visual Feedback**: Button shows "Minimized ✓" when complete
+- **Educational Applications**: Understanding stable conformations, comparing energies
+- **Usage**: Recommended for accurate molecular geometry analysis
+
+#### No Minimization (`minimize:false`)
+- **Process**: Uses original molecular geometry
+- **Usage**: Faster loading, preserves input structure
 
 ### Molecular Electrostatic Potential (MEP) Surfaces
 

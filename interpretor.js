@@ -937,16 +937,57 @@ async renderWithJSmol(smiles, options) {
   // Helper function to apply additional JSmol options after molecule is loaded
   applyJSmolOptions(applet, options) {
     try {
-      // Apply dipoles
-      if (options.dipoles === "show") {
-        if (options.dipoles.includes("bond") || options.dipoles === "show") {
+      // Apply dipoles with options: hide, bond, overall
+      if (options.dipoles) {
+        // Clear any existing dipoles first
+        Jmol.script(applet, `dipole delete; vectors off;`);
+        
+        if (options.dipoles === "bond") {
           Jmol.script(applet, `dipole bonds on; vectors on; vector scale 3.0; color vectors red;`);
           this.outputCallback("Bond dipoles displayed");
-        }
-        if (options.dipoles.includes("overall") || options.dipoles === "show") {
+        } else if (options.dipoles === "overall") {
           Jmol.script(applet, `dipole molecular on; vector on; vector scale 5.0; color vector blue;`);
           this.outputCallback("Overall dipole displayed");
+        } else if (options.dipoles === "hide") {
+          this.outputCallback("Dipoles hidden");
         }
+        // Legacy support for "show" - shows both bond and overall
+        else if (options.dipoles === "show") {
+          Jmol.script(applet, `dipole bonds on; dipole molecular on; vectors on; vector scale 3.0; color vectors red;`);
+          this.outputCallback("Bond and overall dipoles displayed");
+        }
+      }
+      
+      // Apply charge display
+      if (options.charges === "show") {
+        const chargeScript = `
+          label off;
+          calculate partialCharge;
+          label on;
+          set labelOffset 0 0;
+          label %[partialCharge];
+          font label 12;
+          color label black;
+          background label translucent yellow;
+        `;
+        Jmol.script(applet, chargeScript);
+        this.outputCallback("Partial charges displayed");
+      } else if (options.charges === "hide") {
+        Jmol.script(applet, `label off;`);
+        this.outputCallback("Charges hidden");
+      }
+      
+      // Apply energy minimization
+      if (options.minimize === true || options.minimize === "true") {
+        this.outputCallback("Starting energy minimization...");
+        const minimizeScript = `
+          print "Starting energy minimization...";
+          minimize steps 100 criterion 0.001;
+          print "Energy minimization completed";
+          print "Final energy: " + {*}.energy;
+        `;
+        Jmol.script(applet, minimizeScript);
+        this.outputCallback("Energy minimization applied");
       }
       
       // Apply MEP surface
@@ -976,6 +1017,21 @@ async renderWithJSmol(smiles, options) {
             case "torsion":
               Jmol.script(applet, 'set picking torsion; set pickCallback "jmolPickCallback";');
               this.outputCallback("Torsion measurement tool enabled");
+              break;
+            case "charges":
+              // Enable charge display via tools
+              const chargeScript = `
+                label off;
+                calculate partialCharge;
+                label on;
+                set labelOffset 0 0;
+                label %[partialCharge];
+                font label 12;
+                color label black;
+                background label translucent yellow;
+              `;
+              Jmol.script(applet, chargeScript);
+              this.outputCallback("Charge display tool enabled");
               break;
           }
         });
@@ -1053,11 +1109,64 @@ async renderWithJSmol(smiles, options) {
       }
       
       // Update dipole buttons
-      if (options.dipoles === "show") {
-        const bondDipoleBtn = document.getElementById('bondDipolesBtn');
-        const overallDipoleBtn = document.getElementById('overallDipoleBtn');
-        if (bondDipoleBtn) bondDipoleBtn.classList.add('active');
-        if (overallDipoleBtn) overallDipoleBtn.classList.add('active');
+      const bondDipoleBtn = document.getElementById('bondDipolesBtn');
+      const overallDipoleBtn = document.getElementById('overallDipoleBtn');
+      
+      // Reset dipole button states first
+      if (bondDipoleBtn) {
+        bondDipoleBtn.classList.remove('active');
+        bondDipoleBtn.textContent = 'Bond Dipoles';
+      }
+      if (overallDipoleBtn) {
+        overallDipoleBtn.classList.remove('active');
+        overallDipoleBtn.textContent = 'Overall Dipole';
+      }
+      
+      // Apply dipole states
+      if (options.dipoles === "bond") {
+        if (bondDipoleBtn) {
+          bondDipoleBtn.classList.add('active');
+          bondDipoleBtn.textContent = 'Bond Dipoles ✓';
+        }
+      } else if (options.dipoles === "overall") {
+        if (overallDipoleBtn) {
+          overallDipoleBtn.classList.add('active');
+          overallDipoleBtn.textContent = 'Overall Dipole ✓';
+        }
+      } else if (options.dipoles === "show") {
+        // Legacy support - show both
+        if (bondDipoleBtn) {
+          bondDipoleBtn.classList.add('active');
+          bondDipoleBtn.textContent = 'Bond Dipoles ✓';
+        }
+        if (overallDipoleBtn) {
+          overallDipoleBtn.classList.add('active');
+          overallDipoleBtn.textContent = 'Overall Dipole ✓';
+        }
+      }
+      
+      // Update charge button
+      const chargeBtn = document.getElementById('chargeBtn');
+      if (chargeBtn) {
+        if (options.charges === "show" || (options.tools && options.tools.includes('charges'))) {
+          chargeBtn.classList.add('active');
+          chargeBtn.textContent = 'Hide Charges';
+        } else {
+          chargeBtn.classList.remove('active');
+          chargeBtn.textContent = 'Show Charges';
+        }
+      }
+      
+      // Update minimize button
+      const minimizeBtn = document.getElementById('minimizeBtn');
+      if (minimizeBtn && (options.minimize === true || options.minimize === "true")) {
+        minimizeBtn.style.backgroundColor = '#4CAF50';
+        minimizeBtn.textContent = 'Minimized ✓';
+        // Reset after 3 seconds
+        setTimeout(() => {
+          minimizeBtn.style.backgroundColor = '';
+          minimizeBtn.textContent = 'Energy Minimization';
+        }, 3000);
       }
 
       // Update MEP buttons
@@ -1094,17 +1203,23 @@ async renderWithJSmol(smiles, options) {
   parseSimpleOptions(optionsStr) {
     try {
       // Handle simple comma-separated key:value pairs
-      // e.g., "mode:jsmol, style:ballstick, background:black"
+      // e.g., "mode:jsmol, style:ballstick, background:black, dipoles:bond, charges:show, minimize:true"
       const options = {};
       const pairs = optionsStr.split(',');
       
       for (const pair of pairs) {
         const [key, value] = pair.split(':').map(s => s.trim());
         if (key && value) {
-          // Handle array values like "tools:distance,angle"
+          // Handle array values like "tools:distance,angle,charges"
           if (key === 'tools') {
             options[key] = value.split(',').map(s => s.trim());
-          } else {
+          } 
+          // Handle boolean values for minimize
+          else if (key === 'minimize') {
+            options[key] = value === 'true' || value === '1';
+          }
+          // Handle string values for other parameters
+          else {
             options[key] = value;
           }
         }

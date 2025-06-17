@@ -402,18 +402,49 @@ show(base + " + O2 -> CO2 + H2O");
       <p>Checks if a chemical reaction is feasible.</p>
       <pre><code>show(possible("NaOH + HCl -> NaCl + H2O"));</code></pre>
       <p><strong>Output:</strong><br>
-      The reaction "NaOH + HCl -> NaCl + H2O" is chemically possible.<br>
-      ✓ Conditions: room temperature, aqueous<br>
+      The reaction "NaOH + HCl -> NaCl + H2O" is chemically possible.<br><br>
+      ⚗️ Reaction type: Neutralization<br>
+      ✓ Conditions: room temperature, aqueous<br><br>
       🧪 Reactant information:<br>
       • HCl: Strong Non-oxygenated Acid (monoprotic)<br>
-      • NaOH: Strong Base (Soluble)</p>
+      • NaOH: Strong Base (Soluble)<br><br>
+      🔬 Predicted products: NaCl + H2O<br>
+      📝 Given products: NaCl + H2O<br>
+      ✅ The predicted products match the given products.<br><br>
+      true</p>
     </div>
 
     <div class="doc-section">
-      <h4><code>resolve(expression)</code></h4>
-      <p>Balances a chemical equation.</p>
+      <h4><code>resolve(expression, mode)</code></h4>
+      <p>Resolves and processes chemical equations with different analysis modes.</p>
+      
+      <h5>📊 Mode: "balanced" (default)</h5>
+      <p>Balances a chemical equation with stoichiometric coefficients.</p>
       <pre><code>show(resolve("Na3PO4 + CaCl2 -> Ca3(PO4)2 + NaCl"));</code></pre>
       <p><strong>Output:</strong><br>"2 Na3PO4 + 3 CaCl2 -> 1 Ca3(PO4)2 + 6 NaCl"</p>
+      
+      <h5>🔍 Mode: "raw"</h5>
+      <p>Extracts and displays raw reactants and products without balancing.</p>
+      <pre><code>show(resolve("H2 + O2 -> H2O", "raw"));</code></pre>
+      <p><strong>Output:</strong><br>Reactants: H2, O2<br>Products: H2O</p>
+      
+      <h5>📝 Mode: "steps"</h5>
+      <p>Provides detailed step-by-step balancing process with matrix analysis.</p>
+      <pre><code>show(resolve("Ca + H2O -> Ca(OH)2 + H2", "steps"));</code></pre>
+      <p><strong>Output:</strong><br>
+      ⚖️ <strong>Balancing steps for:</strong> Ca + H2O -> Ca(OH)2 + H2<br><br>
+      🔹 <strong>Reactants:</strong> Ca, H2O<br>
+      🔹 <strong>Products:</strong> Ca(OH)2, H2<br><br>
+      🔹 <strong>Unique elements involved:</strong> Ca, H, O<br><br>
+      🔹 <strong>Constructed balance matrix:</strong><br>
+      <em>Each row represents an element, each column a compound.</em><br>
+      <em>This forms a system of linear equations where each row must sum to zero (atoms in = atoms out).</em><br>
+      <em>Negative values = reactants, positive values = products.</em><br>
+      Ca: [-1,  0,  1,  0]<br>
+      H: [ 0, -2,  2,  2]<br>
+      O: [ 0, -1,  2,  0]<br><br>
+      ✅ <strong>Final balanced equation:</strong><br>
+      <strong>1 Ca + 2 H2O -> 1 Ca(OH)2 + 1 H2</strong></p>
     </div>
 
     <div class="doc-section">
@@ -447,7 +478,7 @@ show(base + " + O2 -> CO2 + H2O");
     <div class="doc-section">
       <h4><code>getMolecWeight(formula)</code></h4>
       <p>Calculates molecular weight of a compound.</p>
-      <pre><code>show(getMolecWeight("H2O"));</code> <code>show(getMolecWeight("H2O", "true"));</code></pre>
+      <pre><code>show(getMolecWeight("H2O"));</code> | <code>show(getMolecWeight("H2O", "true"));</code></pre>
       <p><strong>Output:</strong><br>18.015</p>
     </div>
 
@@ -479,10 +510,34 @@ show(base + " + O2 -> CO2 + H2O");
     <h3>🔬 Visualization</h3>
 
     <div class="doc-section">
-      <h4><code>visualize(formula)</code></h4>
+      <h4><code>visualize(formula, options)</code></h4>
       <p>Displays a 2D and 3D graphical representation of a chemical formula or molecule.<br>
       It's recommended to use the name (e.g., "benzene") for higher accuracy.</p>
-      <pre><code>visualize("C6H6");</code> | <code>visualize("benzene"); </code> | <code> visualize("C6H6", '{"mode":"jsmol", "style":"ballstick", "background":"black"}')</code>
+      
+      <h5>💡 Basic Usage</h5>
+      <pre><code>visualize("C6H6");</code> | <code>visualize("benzene");</code></pre>
+      
+      <h5>⚙️ Advanced Parameters (String Format)</h5>
+      <pre><code>visualize("H2O", "mode:jsmol, style:ballstick, background:black, dipoles:bond");</code></pre>
+      
+      <h5>📊 JSON Format</h5>
+      <pre><code>visualize("CH4", '{"mode":"jsmol", "style":"spacefill", "charges":"show", "minimize":true}');</code></pre>
+      
+      <h5>🔧 Key Parameters</h5>
+      <p><strong>mode:</strong> <code>"jsmol"</code> (3D), default auto-detect<br>
+      <strong>style:</strong> <code>"ballstick"</code>, <code>"stick"</code>, <code>"spacefill"</code>, <code>"wireframe"</code><br>
+      <strong>background:</strong> <code>"white"</code>, <code>"black"</code>, <code>"gray"</code><br>
+      <strong>dipoles:</strong> <code>"hide"</code>, <code>"bond"</code>, <code>"overall"</code>, <code>"show"</code><br>
+      <strong>charges:</strong> <code>"hide"</code>, <code>"show"</code> (partial charges)<br>
+      <strong>minimize:</strong> <code>true</code>/<code>false</code> (energy minimization)<br>
+      <strong>mep:</strong> <code>"off"</code>, <code>"lucent"</code>, <code>"opaque"</code> (electron density surface)<br>
+      <strong>tools:</strong> <code>["distance", "angle", "torsion"]</code> (measurement tools)<br>
+      <strong>quality:</strong> <code>"high"</code>, <code>"standard"</code><br>
+      <strong>export:</strong> <code>"save"</code> (auto-export image)</p>
+      
+      <h5>🧪 Examples</h5>
+      <pre><code>visualize("lysergide", '{"mode":"jsmol", "style":"ballstick", "background":"black", "dipoles":"overall", "charges":"show", "quality":"high"}');</code></pre>
+      <pre><code>visualize("H2O", "mode:jsmol, style:ballstick, dipoles:bond, charges:show, background:white, quality:high");</code></pre>
     </div>
   `;
 };

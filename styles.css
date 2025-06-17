@@ -70,6 +70,10 @@
     border-radius: 25px;
     border: 1px solid #b75e6c;
     outline: transparent;
+    font-size: 16px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    line-height: 1.5;
+    resize: none;
 }
 
 #run{
@@ -116,10 +120,45 @@ button:hover{
     overflow-y: scroll;
     scrollbar-width: none;  
     margin-bottom: 50px;
+    font-size: 15px;
+    font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
 } 
 
 #output::-webkit-scrollbar {
     display: none; 
+}
+
+/* Text styling */
+#output p {
+    margin: 8px 0;
+    font-size: 15px;
+}
+
+#output strong {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+#output code {
+    background-color: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 14px;
+    color: #e83e8c;
+}
+
+/* Command and result spacing */
+#output .result-section {
+    margin: 12px 0;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+#output .result-section:last-child {
+    border-bottom: none;
 }
  
 .modal {
